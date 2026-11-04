@@ -36,6 +36,7 @@ public class NukkitDBSystem extends DBSystem {
     public NukkitDBSystem(
             Locale locale,
             MySQLDB mySQLDB,
+            PostgreSQLDB postgreSQLDB,
             SQLiteDB.Factory sqLiteDB,
             PlanConfig config,
             PluginLogger logger
@@ -43,6 +44,7 @@ public class NukkitDBSystem extends DBSystem {
         super(config, locale, sqLiteDB, logger);
 
         databases.add(mySQLDB);
+        databases.add(postgreSQLDB);
         databases.add(sqLiteDB.usingDefaultFile());
     }
 

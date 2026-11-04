@@ -22,9 +22,10 @@ Plugin:
     Check_for_updates: true
     Notify_about_DEV_releases: false
 # -----------------------------------------------------
-# Supported databases: MySQL
+# Supported databases: MySQL, PostgreSQL
 # -----------------------------------------------------
 Database:
+  # Type: MySQL
   MySQL:
     Host: localhost
     Port: 3306
@@ -33,6 +34,18 @@ Database:
     Database: Plan
     # Launch options to append after mysql driver address
     Launch_options: "?rewriteBatchedStatements=true&serverTimezone=UTC"
+    Max_connections: 8
+    Max_Lifetime:
+      Time: 25
+      Unit: MINUTES
+  PostgreSQL:
+    Host: localhost
+    Port: 5432
+    User: postgres
+    Password: minecraft
+    Database: plan
+    # Launch options to append after postgresql driver address
+    Launch_options: "?sslmode=prefer"
     Max_connections: 8
     Max_Lifetime:
       Time: 25

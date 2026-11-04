@@ -14,9 +14,10 @@ configurations {
     mysqlDriver
     mariadbDriver
     sqliteDriver
+    postgresqlDriver
     ipAddressMatcher
-    testImplementation.extendsFrom mysqlDriver, mariadbDriver, sqliteDriver, ipAddressMatcher
-    compileOnly.extendsFrom mysqlDriver, mariadbDriver, sqliteDriver, ipAddressMatcher
+    testImplementation.extendsFrom mysqlDriver, mariadbDriver, sqliteDriver, postgresqlDriver, ipAddressMatcher
+    compileOnly.extendsFrom mysqlDriver, mariadbDriver, sqliteDriver, postgresqlDriver, ipAddressMatcher
 
     swaggerJson // swagger.json configuration
 }
@@ -45,6 +46,14 @@ tasks.register("generateResourceForSQLiteDriver", GenerateDependencyDownloadReso
     includeShadowJarRelocations = false
 }
 
+tasks.register("generateResourceForPostgreSQLDriver", GenerateDependencyDownloadResourceTask) {
+    var conf = configurations.postgresqlDriver
+    configuration = conf
+    file = "assets/plan/dependencies/" + conf.name + ".txt"
+    // Not necessary to include in the resource
+    includeShadowJarRelocations = false
+}
+
 tasks.register("generateResourceForIpAddressMatcher", GenerateDependencyDownloadResourceTask) {
     var conf = configurations.ipAddressMatcher
     configuration = conf
@@ -67,6 +76,7 @@ dependencies {
     mariadbDriver "org.mariadb.jdbc:mariadb-java-client:$mariadbVersion"
     sqliteDriver "org.xerial:sqlite-jdbc:$sqliteVersion"
     sqliteDriver "org.slf4j:slf4j-nop:1.7.36"
+    postgresqlDriver "org.postgresql:postgresql:$postgresqlVersion"
     ipAddressMatcher "com.github.seancfoley:ipaddress:$ipAddressMatcherVersion"
 
     compileOnlyApi "org.jetbrains:annotations:$jetbrainsAnnotationsVersion"
@@ -113,6 +123,7 @@ dependencies {
     testFixturesApi "org.xerial:sqlite-jdbc:$sqliteVersion" // SQLite
     testFixturesApi "com.mysql:mysql-connector-j:$mysqlVersion" // MySQL
     testFixturesApi "org.mariadb.jdbc:mariadb-java-client:$mariadbVersion" // MariaDB
+    testFixturesApi "org.postgresql:postgresql:$postgresqlVersion" // PostgreSQL
 
     testImplementation "com.google.dagger:dagger:$daggerVersion"
     testAnnotationProcessor "com.google.dagger:dagger-compiler:$daggerVersion"
@@ -296,6 +307,7 @@ processResources {
     dependsOn determineAssetModifications
     dependsOn generateResourceForMySQLDriver
     dependsOn generateResourceForSQLiteDriver
+    dependsOn generateResourceForPostgreSQLDriver
     dependsOn generateResourceForIpAddressMatcher
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from "build/sources/resources"

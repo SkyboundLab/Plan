@@ -772,7 +772,9 @@ public class LargeStoreQueries {
 
     public static Executable upsertGeoInfo(List<GeoInfoTable.Row> rows, DBType dbType) {
         if (rows.isEmpty()) return Executable.empty();
-        return new ExecBatchStatement(dbType == DBType.MYSQL ? GeoInfoTable.UPSERT_STATEMENT_MYSQL : GeoInfoTable.UPSERT_STATEMENT_SQLITE) {
+        return new ExecBatchStatement(dbType == DBType.MYSQL ? GeoInfoTable.UPSERT_STATEMENT_MYSQL
+                : dbType == DBType.POSTGRESQL ? GeoInfoTable.UPSERT_STATEMENT_POSTGRESQL
+                : GeoInfoTable.UPSERT_STATEMENT_SQLITE) {
             @Override
             public void prepare(PreparedStatement statement) throws SQLException {
                 for (GeoInfoTable.Row row : rows) {
@@ -785,7 +787,9 @@ public class LargeStoreQueries {
 
     public static Executable upsertNicknames(List<NicknamesTable.Row> rows, DBType dbType) {
         if (rows.isEmpty()) return Executable.empty();
-        return new ExecBatchStatement(dbType == DBType.MYSQL ? NicknamesTable.UPSERT_STATEMENT_MYSQL : NicknamesTable.UPSERT_STATEMENT_SQLITE) {
+        return new ExecBatchStatement(dbType == DBType.MYSQL ? NicknamesTable.UPSERT_STATEMENT_MYSQL
+                : dbType == DBType.POSTGRESQL ? NicknamesTable.UPSERT_STATEMENT_POSTGRESQL
+                : NicknamesTable.UPSERT_STATEMENT_SQLITE) {
             @Override
             public void prepare(PreparedStatement statement) throws SQLException {
                 for (NicknamesTable.Row row : rows) {
@@ -798,7 +802,9 @@ public class LargeStoreQueries {
 
     public static Executable upsertAllowlistBounces(List<AllowlistBounceTable.Row> rows, DBType dbType) {
         if (rows.isEmpty()) return Executable.empty();
-        return new ExecBatchStatement(dbType == DBType.MYSQL ? AllowlistBounceTable.UPSERT_MYSQL : AllowlistBounceTable.UPSERT_SQLITE) {
+        return new ExecBatchStatement(dbType == DBType.MYSQL ? AllowlistBounceTable.UPSERT_MYSQL
+                : dbType == DBType.POSTGRESQL ? AllowlistBounceTable.UPSERT_POSTGRESQL
+                : AllowlistBounceTable.UPSERT_SQLITE) {
             @Override
             public void prepare(PreparedStatement statement) throws SQLException {
                 for (AllowlistBounceTable.Row row : rows) {

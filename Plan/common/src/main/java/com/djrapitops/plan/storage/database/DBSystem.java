@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -105,12 +106,49 @@ public class DBSystem implements SubSystem {
         } catch (DBInitException e) {
             Throwable cause = e.getCause();
             String message = cause == null ? e.getMessage() : cause.getMessage();
-            if (message.contains("The driver has not received any packets from the server.")) {
+            if (db.getType() == DBType.POSTGRESQL && isConnectionFailure(cause)) {
+                throw new EnableException(getPostgreSQLConnectionFailureMessage(), cause);
+            } else if (message != null && message.contains("The driver has not received any packets from the server.")) {
                 throw new EnableException(getMySQLConnectionFailureMessage());
             } else {
                 throw new EnableException("Failed to start " + db.getType().getName() + ": " + message, cause);
             }
         }
+    }
+
+    /**
+     * Checks if the failure was caused by not being able to connect to the database server.
+     * PostgreSQL reports connection problems with SQLState class 08 (connection exception).
+     */
+    private static boolean isConnectionFailure(Throwable t) {
+        while (t != null) {
+            if (t instanceof SQLException) {
+                String sqlState = ((SQLException) t).getSQLState();
+                if (sqlState != null && sqlState.startsWith("08")) {
+                    return true;
+                }
+            }
+            String msg = t.getMessage();
+            if (msg != null && (msg.contains("Connection refused")
+                    || msg.contains("could not connect")
+                    || msg.contains("The connection attempt failed")
+                    || msg.contains("Connection timed out"))) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
+    }
+
+    @NotNull
+    private String getPostgreSQLConnectionFailureMessage() {
+        return "Failed to start " + db.getType().getName() + ": Could not connect to PostgreSQL-" +
+                "\n- Check that database address '" + config.get(DatabaseSettings.POSTGRESQL_HOST) + ":" + config.get(DatabaseSettings.POSTGRESQL_PORT) + "' is accessible." +
+                "\n- Check that database called '" + config.get(DatabaseSettings.POSTGRESQL_DATABASE) + "' exists inside PostgreSQL." +
+                "\n- Check that PostgreSQL user '" + config.get(DatabaseSettings.POSTGRESQL_USER) + "' has privileges to access the database." +
+                "\n- Check that other PostgreSQL settings in Plan config correct (sslmode can be set with Launch_options)." +
+                (isInsideDocker() ? "\n- Check that your docker container networking is set up correctly (Since your server is running inside a docker)" : "") +
+                "\n  More help: https://github.com/plan-player-analytics/Plan/wiki/Bungee-Set-Up#step-2-create-a-mysql-database-for-plan";
     }
 
     @NotNull

@@ -17,6 +17,7 @@
 package com.djrapitops.plan.storage.database;
 
 import com.djrapitops.plan.settings.config.PlanConfig;
+import com.djrapitops.plan.settings.config.paths.DatabaseSettings;
 import com.djrapitops.plan.settings.locale.Locale;
 import net.playeranalytics.plugin.server.PluginLogger;
 
@@ -36,11 +37,23 @@ public class ProxyDBSystem extends DBSystem {
             PlanConfig config,
             Locale locale,
             MySQLDB mySQLDB,
+            PostgreSQLDB postgreSQLDB,
             SQLiteDB.Factory sqLiteDB,
             PluginLogger logger
     ) {
         super(config, locale, sqLiteDB, logger);
         databases.add(mySQLDB);
+        databases.add(postgreSQLDB);
         db = mySQLDB;
+    }
+
+    @Override
+    public void enable() {
+        // Proxy config has no Database.Type by default - MySQL is used unless another registered type is configured
+        String dbType = config.getOrDefault(DatabaseSettings.TYPE, "MySQL").toLowerCase().trim();
+        if (DBType.exists(dbType)) {
+            db = getActiveDatabaseByName(dbType);
+        }
+        super.enable();
     }
 }

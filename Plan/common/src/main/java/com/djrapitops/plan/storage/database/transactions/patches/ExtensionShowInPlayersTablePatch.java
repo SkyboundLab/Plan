@@ -33,6 +33,7 @@ public class ExtensionShowInPlayersTablePatch extends Patch {
 
     @Override
     protected void applyPatch() {
-        addColumn(ExtensionProviderTable.TABLE_NAME, ExtensionProviderTable.SHOW_IN_PLAYERS_TABLE + ' ' + Sql.BOOL + " NOT NULL DEFAULT 0");
+        // FALSE works as a boolean default on MySQL (0), SQLite and PostgreSQL
+        addColumn(ExtensionProviderTable.TABLE_NAME, ExtensionProviderTable.SHOW_IN_PLAYERS_TABLE + ' ' + Sql.BOOL + " NOT NULL DEFAULT FALSE");
     }
 }

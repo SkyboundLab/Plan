@@ -53,105 +53,113 @@ public class WebUserQueries {
     }
 
     public static Query<Optional<User>> fetchUser(@Untrusted String username) {
-        String sql = SELECT +
-                SecurityTable.USERNAME + ',' +
-                UsersTable.USER_NAME + ',' +
-                SecurityTable.LINKED_TO + ',' +
-                SecurityTable.SALT_PASSWORD_HASH + ',' +
-                WebGroupTable.NAME + ',' +
-                "GROUP_CONCAT(" + WebPermissionTable.PERMISSION + ",',') as user_permissions" +
-                FROM + SecurityTable.TABLE_NAME + " s" +
-                INNER_JOIN + WebGroupTable.TABLE_NAME + " g on g." + WebGroupTable.ID + "=s." + SecurityTable.GROUP_ID +
-                LEFT_JOIN + WebGroupToPermissionTable.TABLE_NAME + " gtp on gtp." + WebGroupToPermissionTable.GROUP_ID + "=s." + SecurityTable.GROUP_ID +
-                LEFT_JOIN + WebPermissionTable.TABLE_NAME + " p on gtp." + WebGroupToPermissionTable.PERMISSION_ID + "=p." + WebPermissionTable.ID +
-                LEFT_JOIN + UsersTable.TABLE_NAME + " on " + SecurityTable.LINKED_TO + "=" + UsersTable.USER_UUID +
-                WHERE + SecurityTable.USERNAME + "=?" +
-                GROUP_BY +
-                SecurityTable.USERNAME + ',' +
-                UsersTable.USER_NAME + ',' +
-                SecurityTable.LINKED_TO + ',' +
-                SecurityTable.SALT_PASSWORD_HASH + ',' +
-                WebGroupTable.NAME
-                + LIMIT + "1";
-        return db -> db.queryOptional(sql, WebUserQueries::extractUser, username);
+        return db -> {
+            String sql = SELECT +
+                    SecurityTable.USERNAME + ',' +
+                    UsersTable.USER_NAME + ',' +
+                    SecurityTable.LINKED_TO + ',' +
+                    SecurityTable.SALT_PASSWORD_HASH + ',' +
+                    WebGroupTable.NAME + ',' +
+                    db.getSql().groupConcat(WebPermissionTable.PERMISSION, "','") + " as user_permissions" +
+                    FROM + SecurityTable.TABLE_NAME + " s" +
+                    INNER_JOIN + WebGroupTable.TABLE_NAME + " g on g." + WebGroupTable.ID + "=s." + SecurityTable.GROUP_ID +
+                    LEFT_JOIN + WebGroupToPermissionTable.TABLE_NAME + " gtp on gtp." + WebGroupToPermissionTable.GROUP_ID + "=s." + SecurityTable.GROUP_ID +
+                    LEFT_JOIN + WebPermissionTable.TABLE_NAME + " p on gtp." + WebGroupToPermissionTable.PERMISSION_ID + "=p." + WebPermissionTable.ID +
+                    LEFT_JOIN + UsersTable.TABLE_NAME + " on " + SecurityTable.LINKED_TO + "=" + UsersTable.USER_UUID +
+                    WHERE + SecurityTable.USERNAME + "=?" +
+                    GROUP_BY +
+                    SecurityTable.USERNAME + ',' +
+                    UsersTable.USER_NAME + ',' +
+                    SecurityTable.LINKED_TO + ',' +
+                    SecurityTable.SALT_PASSWORD_HASH + ',' +
+                    WebGroupTable.NAME
+                    + LIMIT + "1";
+            return db.queryOptional(sql, WebUserQueries::extractUser, username);
+        };
     }
 
     public static Query<Optional<User>> fetchUser(UUID linkedToUUID) {
-        String sql = SELECT +
-                SecurityTable.USERNAME + ',' +
-                UsersTable.USER_NAME + ',' +
-                SecurityTable.LINKED_TO + ',' +
-                SecurityTable.SALT_PASSWORD_HASH + ',' +
-                WebGroupTable.NAME + ',' +
-                "GROUP_CONCAT(" + WebPermissionTable.PERMISSION + ",',') as user_permissions" +
-                FROM + SecurityTable.TABLE_NAME + " s" +
-                INNER_JOIN + WebGroupTable.TABLE_NAME + " g on g." + WebGroupTable.ID + "=s." + SecurityTable.GROUP_ID +
-                LEFT_JOIN + WebGroupToPermissionTable.TABLE_NAME + " gtp on gtp." + WebGroupToPermissionTable.GROUP_ID + "=s." + SecurityTable.GROUP_ID +
-                LEFT_JOIN + WebPermissionTable.TABLE_NAME + " p on gtp." + WebGroupToPermissionTable.PERMISSION_ID + "=p." + WebPermissionTable.ID +
-                LEFT_JOIN + UsersTable.TABLE_NAME + " on " + SecurityTable.LINKED_TO + "=" + UsersTable.USER_UUID +
-                WHERE + SecurityTable.LINKED_TO + "=?" +
-                GROUP_BY +
-                SecurityTable.USERNAME + ',' +
-                UsersTable.USER_NAME + ',' +
-                SecurityTable.LINKED_TO + ',' +
-                SecurityTable.SALT_PASSWORD_HASH + ',' +
-                WebGroupTable.NAME
-                + LIMIT + "1";
-        return db -> db.queryOptional(sql, WebUserQueries::extractUser, linkedToUUID);
+        return db -> {
+            String sql = SELECT +
+                    SecurityTable.USERNAME + ',' +
+                    UsersTable.USER_NAME + ',' +
+                    SecurityTable.LINKED_TO + ',' +
+                    SecurityTable.SALT_PASSWORD_HASH + ',' +
+                    WebGroupTable.NAME + ',' +
+                    db.getSql().groupConcat(WebPermissionTable.PERMISSION, "','") + " as user_permissions" +
+                    FROM + SecurityTable.TABLE_NAME + " s" +
+                    INNER_JOIN + WebGroupTable.TABLE_NAME + " g on g." + WebGroupTable.ID + "=s." + SecurityTable.GROUP_ID +
+                    LEFT_JOIN + WebGroupToPermissionTable.TABLE_NAME + " gtp on gtp." + WebGroupToPermissionTable.GROUP_ID + "=s." + SecurityTable.GROUP_ID +
+                    LEFT_JOIN + WebPermissionTable.TABLE_NAME + " p on gtp." + WebGroupToPermissionTable.PERMISSION_ID + "=p." + WebPermissionTable.ID +
+                    LEFT_JOIN + UsersTable.TABLE_NAME + " on " + SecurityTable.LINKED_TO + "=" + UsersTable.USER_UUID +
+                    WHERE + SecurityTable.LINKED_TO + "=?" +
+                    GROUP_BY +
+                    SecurityTable.USERNAME + ',' +
+                    UsersTable.USER_NAME + ',' +
+                    SecurityTable.LINKED_TO + ',' +
+                    SecurityTable.SALT_PASSWORD_HASH + ',' +
+                    WebGroupTable.NAME
+                    + LIMIT + "1";
+            return db.queryOptional(sql, WebUserQueries::extractUser, linkedToUUID);
+        };
     }
 
     public static Query<List<User>> fetchAllUsers() {
-        String sql = SELECT +
-                SecurityTable.USERNAME + ',' +
-                UsersTable.USER_NAME + ',' +
-                SecurityTable.LINKED_TO + ',' +
-                SecurityTable.SALT_PASSWORD_HASH + ',' +
-                WebGroupTable.NAME + ',' +
-                "GROUP_CONCAT(" + WebPermissionTable.PERMISSION + ",',') as user_permissions" +
-                FROM + SecurityTable.TABLE_NAME + " s" +
-                INNER_JOIN + WebGroupTable.TABLE_NAME + " g on g." + WebGroupTable.ID + "=s." + SecurityTable.GROUP_ID +
-                LEFT_JOIN + WebGroupToPermissionTable.TABLE_NAME + " gtp on gtp." + WebGroupToPermissionTable.GROUP_ID + "=s." + SecurityTable.GROUP_ID +
-                LEFT_JOIN + WebPermissionTable.TABLE_NAME + " p on gtp." + WebGroupToPermissionTable.PERMISSION_ID + "=p." + WebPermissionTable.ID +
-                LEFT_JOIN + UsersTable.TABLE_NAME + " on " + SecurityTable.LINKED_TO + "=" + UsersTable.USER_UUID +
-                GROUP_BY +
-                SecurityTable.USERNAME + ',' +
-                UsersTable.USER_NAME + ',' +
-                SecurityTable.LINKED_TO + ',' +
-                SecurityTable.SALT_PASSWORD_HASH + ',' +
-                WebGroupTable.NAME;
-        return db -> db.queryList(sql, WebUserQueries::extractUser);
+        return db -> {
+            String sql = SELECT +
+                    SecurityTable.USERNAME + ',' +
+                    UsersTable.USER_NAME + ',' +
+                    SecurityTable.LINKED_TO + ',' +
+                    SecurityTable.SALT_PASSWORD_HASH + ',' +
+                    WebGroupTable.NAME + ',' +
+                    db.getSql().groupConcat(WebPermissionTable.PERMISSION, "','") + " as user_permissions" +
+                    FROM + SecurityTable.TABLE_NAME + " s" +
+                    INNER_JOIN + WebGroupTable.TABLE_NAME + " g on g." + WebGroupTable.ID + "=s." + SecurityTable.GROUP_ID +
+                    LEFT_JOIN + WebGroupToPermissionTable.TABLE_NAME + " gtp on gtp." + WebGroupToPermissionTable.GROUP_ID + "=s." + SecurityTable.GROUP_ID +
+                    LEFT_JOIN + WebPermissionTable.TABLE_NAME + " p on gtp." + WebGroupToPermissionTable.PERMISSION_ID + "=p." + WebPermissionTable.ID +
+                    LEFT_JOIN + UsersTable.TABLE_NAME + " on " + SecurityTable.LINKED_TO + "=" + UsersTable.USER_UUID +
+                    GROUP_BY +
+                    SecurityTable.USERNAME + ',' +
+                    UsersTable.USER_NAME + ',' +
+                    SecurityTable.LINKED_TO + ',' +
+                    SecurityTable.SALT_PASSWORD_HASH + ',' +
+                    WebGroupTable.NAME;
+            return db.queryList(sql, WebUserQueries::extractUser);
+        };
     }
 
     public static Query<Map<String, CookieMetadata>> fetchActiveCookies() {
-        String sql = SELECT +
-                SecurityTable.USERNAME + ',' +
-                UsersTable.USER_NAME + ',' +
-                SecurityTable.LINKED_TO + ',' +
-                SecurityTable.SALT_PASSWORD_HASH + ',' +
-                WebGroupTable.NAME + ',' +
-                CookieTable.COOKIE + ',' +
-                CookieTable.EXPIRES + ',' +
-                CookieTable.IP_ADDRESS + ',' +
-                "GROUP_CONCAT(" + WebPermissionTable.PERMISSION + ",',') as user_permissions" +
-                FROM + CookieTable.TABLE_NAME + " c" +
-                INNER_JOIN + SecurityTable.TABLE_NAME + " s on c." + CookieTable.WEB_USERNAME + "=s." + SecurityTable.USERNAME +
-                INNER_JOIN + WebGroupTable.TABLE_NAME + " g on g." + WebGroupTable.ID + "=s." + SecurityTable.GROUP_ID +
-                LEFT_JOIN + WebGroupToPermissionTable.TABLE_NAME + " gtp on gtp." + WebGroupToPermissionTable.GROUP_ID + "=s." + SecurityTable.GROUP_ID +
-                LEFT_JOIN + WebPermissionTable.TABLE_NAME + " p on gtp." + WebGroupToPermissionTable.PERMISSION_ID + "=p." + WebPermissionTable.ID +
-                LEFT_JOIN + UsersTable.TABLE_NAME + " on " + SecurityTable.LINKED_TO + "=" + UsersTable.USER_UUID +
-                WHERE + CookieTable.EXPIRES + ">?" +
-                GROUP_BY +
-                SecurityTable.USERNAME + ',' +
-                UsersTable.USER_NAME + ',' +
-                SecurityTable.LINKED_TO + ',' +
-                SecurityTable.SALT_PASSWORD_HASH + ',' +
-                WebGroupTable.NAME + ',' +
-                CookieTable.COOKIE + ',' +
-                CookieTable.EXPIRES + ',' +
-                CookieTable.IP_ADDRESS;
+        return db -> {
+            String sql = SELECT +
+                    SecurityTable.USERNAME + ',' +
+                    UsersTable.USER_NAME + ',' +
+                    SecurityTable.LINKED_TO + ',' +
+                    SecurityTable.SALT_PASSWORD_HASH + ',' +
+                    WebGroupTable.NAME + ',' +
+                    CookieTable.COOKIE + ',' +
+                    CookieTable.EXPIRES + ',' +
+                    CookieTable.IP_ADDRESS + ',' +
+                    db.getSql().groupConcat(WebPermissionTable.PERMISSION, "','") + " as user_permissions" +
+                    FROM + CookieTable.TABLE_NAME + " c" +
+                    INNER_JOIN + SecurityTable.TABLE_NAME + " s on c." + CookieTable.WEB_USERNAME + "=s." + SecurityTable.USERNAME +
+                    INNER_JOIN + WebGroupTable.TABLE_NAME + " g on g." + WebGroupTable.ID + "=s." + SecurityTable.GROUP_ID +
+                    LEFT_JOIN + WebGroupToPermissionTable.TABLE_NAME + " gtp on gtp." + WebGroupToPermissionTable.GROUP_ID + "=s." + SecurityTable.GROUP_ID +
+                    LEFT_JOIN + WebPermissionTable.TABLE_NAME + " p on gtp." + WebGroupToPermissionTable.PERMISSION_ID + "=p." + WebPermissionTable.ID +
+                    LEFT_JOIN + UsersTable.TABLE_NAME + " on " + SecurityTable.LINKED_TO + "=" + UsersTable.USER_UUID +
+                    WHERE + CookieTable.EXPIRES + ">?" +
+                    GROUP_BY +
+                    SecurityTable.USERNAME + ',' +
+                    UsersTable.USER_NAME + ',' +
+                    SecurityTable.LINKED_TO + ',' +
+                    SecurityTable.SALT_PASSWORD_HASH + ',' +
+                    WebGroupTable.NAME + ',' +
+                    CookieTable.COOKIE + ',' +
+                    CookieTable.EXPIRES + ',' +
+                    CookieTable.IP_ADDRESS;
 
-        return db -> db.queryMap(sql, (set, byCookie) -> byCookie.put(set.getString(CookieTable.COOKIE), extractCookieMetadata(set)),
-                System.currentTimeMillis());
+            return db.queryMap(sql, (set, byCookie) -> byCookie.put(set.getString(CookieTable.COOKIE), extractCookieMetadata(set)),
+                    System.currentTimeMillis());
+        };
     }
 
     private static CookieMetadata extractCookieMetadata(ResultSet set) throws SQLException {
@@ -190,8 +198,10 @@ public class WebUserQueries {
     }
 
     public static Query<List<String>> fetchAvailablePermissions() {
-        String sql = SELECT + WebPermissionTable.PERMISSION + FROM + WebPermissionTable.TABLE_NAME + ORDER_BY + WebPermissionTable.PERMISSION;
-        return db -> db.queryList(sql, row -> row.getString(WebPermissionTable.PERMISSION));
+        return db -> {
+            String sql = SELECT + WebPermissionTable.PERMISSION + FROM + WebPermissionTable.TABLE_NAME + db.getSql().orderByText(WebPermissionTable.PERMISSION);
+            return db.queryList(sql, row -> row.getString(WebPermissionTable.PERMISSION));
+        };
     }
 
     public static Query<Optional<Integer>> fetchGroupId(@Untrusted String name) {

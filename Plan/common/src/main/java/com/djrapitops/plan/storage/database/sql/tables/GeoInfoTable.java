@@ -71,6 +71,10 @@ public class GeoInfoTable {
             "VALUES (?, ?, ?) " +
             "ON CONFLICT(" + USER_ID + ',' + GEOLOCATION + ") DO UPDATE SET " +
             LAST_USED + " = MAX(excluded." + LAST_USED + ", " + TABLE_NAME + "." + LAST_USED + ");";
+    public static final String UPSERT_STATEMENT_POSTGRESQL = INSERT_INTO + TABLE_NAME + " (" + USER_ID + ", " + GEOLOCATION + ", " + LAST_USED + ") " +
+            "VALUES (?, ?, ?) " +
+            "ON CONFLICT(" + USER_ID + ',' + GEOLOCATION + ") DO UPDATE SET " +
+            LAST_USED + " = GREATEST(excluded." + LAST_USED + ", " + TABLE_NAME + "." + LAST_USED + ");";
 
     private GeoInfoTable() {
         /* Static information class */

@@ -42,7 +42,7 @@ public class WebPermissionTable {
     }
 
     public static String safeInsertSQL(DBType dbType) {
-        return dbType.getSql().insertOrIgnore() + TABLE_NAME + " (" + PERMISSION + ") VALUES (?)";
+        return dbType.getSql().insertOrIgnore() + TABLE_NAME + " (" + PERMISSION + ") VALUES (?)" + dbType.getSql().insertOrIgnoreSuffix();
     }
 
     public static String createTableSQL(DBType dbType) {

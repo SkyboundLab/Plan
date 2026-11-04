@@ -171,7 +171,7 @@ public class TPSQueries {
                     "SELECT\n" +
                     "    date," +
                     " SUM(new_segment) OVER (ORDER BY date" +
-                    (db.getType() == DBType.SQLITE ? " ROWS UNBOUNDED PRECEDING" : "") +
+                    (db.getType() == DBType.MYSQL ? "" : " ROWS UNBOUNDED PRECEDING") +
                     ") AS segment_id\n" +
                     "FROM marked" +
                     ")\n" +

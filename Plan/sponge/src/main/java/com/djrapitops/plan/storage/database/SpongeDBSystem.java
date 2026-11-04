@@ -37,6 +37,7 @@ public class SpongeDBSystem extends DBSystem {
     public SpongeDBSystem(
             Locale locale,
             MySQLDB mySQLDB,
+            PostgreSQLDB postgreSQLDB,
             SQLiteDB.Factory sqLiteDB,
             PlanConfig config,
             PluginLogger logger
@@ -44,6 +45,7 @@ public class SpongeDBSystem extends DBSystem {
         super(config, locale, sqLiteDB, logger);
 
         databases.add(mySQLDB);
+        databases.add(postgreSQLDB);
         databases.add(sqLiteDB.usingDefaultFile());
     }
 

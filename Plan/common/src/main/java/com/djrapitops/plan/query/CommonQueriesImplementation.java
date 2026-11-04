@@ -30,6 +30,7 @@ import com.djrapitops.plan.storage.database.queries.objects.ServerQueries;
 import com.djrapitops.plan.storage.database.queries.objects.SessionQueries;
 import com.djrapitops.plan.storage.database.queries.objects.UserIdentifierQueries;
 import com.djrapitops.plan.storage.database.queries.schema.MySQLSchemaQueries;
+import com.djrapitops.plan.storage.database.queries.schema.PostgreSQLSchemaQueries;
 import com.djrapitops.plan.storage.database.queries.schema.SQLiteSchemaQueries;
 
 import java.util.Optional;
@@ -91,6 +92,8 @@ public class CommonQueriesImplementation implements CommonQueries {
                 return db.query(SQLiteSchemaQueries.doesTableExist(table));
             case MYSQL:
                 return db.query(MySQLSchemaQueries.doesTableExist(table));
+            case POSTGRESQL:
+                return db.query(PostgreSQLSchemaQueries.doesTableExist(table));
             default:
                 throw new IllegalStateException("Unsupported Database Type: " + dbType.getName());
         }
@@ -104,6 +107,8 @@ public class CommonQueriesImplementation implements CommonQueries {
                 return db.query(MySQLSchemaQueries.doesColumnExist(table, column));
             case SQLITE:
                 return db.query(SQLiteSchemaQueries.doesColumnExist(table, column));
+            case POSTGRESQL:
+                return db.query(PostgreSQLSchemaQueries.doesColumnExist(table, column));
             default:
                 throw new IllegalStateException("Unsupported Database Type: " + dbType.getName());
         }

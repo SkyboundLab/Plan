@@ -118,7 +118,7 @@ public class BadJoinAddressDataCorrectionPatch extends Patch {
     private boolean hasBadAddressIds() {
         String sql = SELECT + "COUNT(*) as c" +
                 FROM + JoinAddressTable.TABLE_NAME +
-                WHERE + "INSTR(" + JoinAddressTable.JOIN_ADDRESS + ", CHAR(0))" + lockForUpdate();
+                WHERE + dbType.getSql().containsNullChar(JoinAddressTable.JOIN_ADDRESS) + lockForUpdate();
         return query(db -> db.queryOptional(sql, results -> results.getInt("c") > 0))
                 .orElse(false);
     }
@@ -127,7 +127,7 @@ public class BadJoinAddressDataCorrectionPatch extends Patch {
         String sql = SELECT + JoinAddressTable.ID + ',' +
                 JoinAddressTable.JOIN_ADDRESS +
                 FROM + JoinAddressTable.TABLE_NAME +
-                WHERE + "INSTR(" + JoinAddressTable.JOIN_ADDRESS + ", CHAR(0))" + lockForUpdate();
+                WHERE + dbType.getSql().containsNullChar(JoinAddressTable.JOIN_ADDRESS) + lockForUpdate();
         return query(db -> db.queryMap(sql, (results, map) -> map.put(results.getString(JoinAddressTable.JOIN_ADDRESS),
                 results.getInt(JoinAddressTable.ID))));
     }

@@ -66,7 +66,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class DatabaseCommands {
 
-    private static final String SUPPORTED_DB_OPTIONS = "<MySQL/SQLite>";
+    private static final String SUPPORTED_DB_OPTIONS = "<MySQL/PostgreSQL/SQLite>";
 
     private final Locale locale;
     private final Confirmation confirmation;

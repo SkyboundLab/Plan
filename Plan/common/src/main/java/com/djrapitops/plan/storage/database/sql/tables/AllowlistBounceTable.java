@@ -72,6 +72,11 @@ public class AllowlistBounceTable {
             " ON CONFLICT(uuid, server_id) DO UPDATE SET " +
             TIMES + "=" + TABLE_NAME + '.' + TIMES + "+excluded." + TIMES + "," +
             LAST_BOUNCE + "=MAX(excluded." + LAST_BOUNCE + "," + TABLE_NAME + '.' + LAST_BOUNCE + ")";
+    public static final String UPSERT_POSTGRESQL = INSERT_INTO + TABLE_NAME + " (" + UUID + ',' + USER_NAME + ',' + TIMES + ',' + LAST_BOUNCE + ',' + SERVER_ID + ')' +
+            " VALUES (?, ?, ?, ?, ?)" +
+            " ON CONFLICT(" + UUID + ", " + SERVER_ID + ") DO UPDATE SET " +
+            TIMES + "=" + TABLE_NAME + '.' + TIMES + "+excluded." + TIMES + "," +
+            LAST_BOUNCE + "=GREATEST(excluded." + LAST_BOUNCE + "," + TABLE_NAME + '.' + LAST_BOUNCE + ")";
 
     private AllowlistBounceTable() {
         /* Static information class */

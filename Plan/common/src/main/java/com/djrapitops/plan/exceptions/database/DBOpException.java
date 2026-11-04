@@ -62,6 +62,11 @@ public class DBOpException extends IllegalStateException implements ExceptionWit
         int errorCode = e.getErrorCode();
         context.related("Error code: " + errorCode)
                 .related(sql);
+        // PostgreSQL reports errors via SQLState (errorCode is 0)
+        String sqlState = e.getSQLState();
+        if (sqlState != null && addPostgreSQLContext(sqlState, context)) {
+            return new DBOpException("SQL Failure: " + e.getMessage(), e, context.build());
+        }
         switch (errorCode) {
             // SQLite Corrupt
             case 10:
@@ -165,6 +170,39 @@ public class DBOpException extends IllegalStateException implements ExceptionWit
                 context.related("Unknown SQL Error code");
         }
         return new DBOpException("SQL Failure: " + e.getMessage(), e, context.build());
+    }
+
+    /**
+     * Adds context for PostgreSQL SQLStates.
+     *
+     * @return true if the SQLState was recognized and handled.
+     */
+    private static boolean addPostgreSQLContext(String sqlState, ErrorContext.Builder context) {
+        switch (sqlState) {
+            case "23505": // unique_violation
+                context.related(DUPLICATE_KEY)
+                        .whatToDo("Report this, duplicate key exists in SQL.");
+                return true;
+            case "23502": // not_null_violation
+            case "23503": // foreign_key_violation
+                context.related(CONSTRAINT_VIOLATION)
+                        .whatToDo("Report this, there is an SQL Constraint Violation.");
+                return true;
+            case "40P01": // deadlock_detected
+                context.related("Deadlock");
+                return true;
+            case "55P03": // lock_not_available
+                context.related("Lock wait timeout exceeded.");
+                return true;
+            case "42601": // syntax_error
+            case "42703": // undefined_column
+            case "42P01": // undefined_table
+                context.related("SQL Grammar error")
+                        .whatToDo("Report this, there is an SQL grammar error.");
+                return true;
+            default:
+                return false;
+        }
     }
 
     // Checkstyle.ON: CyclomaticComplexity

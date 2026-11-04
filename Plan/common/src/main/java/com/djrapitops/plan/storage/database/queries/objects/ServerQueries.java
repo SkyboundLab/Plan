@@ -177,7 +177,8 @@ public class ServerQueries {
     public static Query<List<String>> fetchGameServerNames() {
         String sql = Select.from(ServerTable.TABLE_NAME,
                         ServerTable.ID, ServerTable.SERVER_UUID, ServerTable.NAME)
-                .where(ServerTable.PROXY + "=0")
+                // FALSE works as a boolean literal on MySQL (0), SQLite and PostgreSQL
+                .where(ServerTable.PROXY + "=FALSE")
                 .toString();
 
         return new QueryAllStatement<>(sql) {

@@ -20,6 +20,7 @@ import com.djrapitops.plan.exceptions.database.DBOpException;
 import com.djrapitops.plan.storage.database.DBType;
 import com.djrapitops.plan.storage.database.queries.QueryStatement;
 import com.djrapitops.plan.storage.database.queries.schema.MySQLSchemaQueries;
+import com.djrapitops.plan.storage.database.queries.schema.PostgreSQLSchemaQueries;
 import com.djrapitops.plan.storage.database.queries.schema.SQLiteSchemaQueries;
 import com.djrapitops.plan.storage.database.transactions.init.OperationCriticalTransaction;
 
@@ -78,6 +79,8 @@ public abstract class Patch extends OperationCriticalTransaction {
                 return query(MySQLSchemaQueries.doesColumnExist(tableName, columnName));
             case SQLITE:
                 return query(SQLiteSchemaQueries.doesColumnExist(tableName, columnName));
+            case POSTGRESQL:
+                return query(PostgreSQLSchemaQueries.doesColumnExist(tableName, columnName));
             default:
                 throw new IllegalStateException("Unsupported Database Type: " + dbType.getName());
         }
@@ -88,11 +91,13 @@ public abstract class Patch extends OperationCriticalTransaction {
     }
 
     protected void dropColumn(String tableName, String columnName) {
-        execute(ALTER_TABLE + tableName + " DROP COLUMN " + columnName);
+        // PostgreSQL requires CASCADE when other objects (e.g. foreign keys) depend on the column
+        execute(ALTER_TABLE + tableName + " DROP COLUMN " + columnName + (dbType == DBType.POSTGRESQL ? " CASCADE" : ""));
     }
 
     protected void dropTable(String name) {
-        execute("DROP TABLE IF EXISTS " + name);
+        // PostgreSQL requires CASCADE when other tables have foreign keys referencing this table
+        execute("DROP TABLE IF EXISTS " + name + (dbType == DBType.POSTGRESQL ? " CASCADE" : ""));
     }
 
     protected void renameTable(String from, String to) {
@@ -102,6 +107,7 @@ public abstract class Patch extends OperationCriticalTransaction {
     private String getRenameTableSQL(String from, String to) {
         switch (dbType) {
             case SQLITE:
+            case POSTGRESQL:
                 return ALTER_TABLE + from + " RENAME TO " + to;
             case MYSQL:
                 return "RENAME TABLE " + from + " TO " + to;
@@ -111,25 +117,34 @@ public abstract class Patch extends OperationCriticalTransaction {
     }
 
     protected void dropForeignKeys(String referencedTable) {
-        if (dbType != DBType.MYSQL) {
+        if (dbType == DBType.SQLITE) {
             return;
         }
 
-        List<MySQLSchemaQueries.ForeignKeyConstraint> constraints = query(MySQLSchemaQueries.foreignKeyConstraintsOf(referencedTable));
+        List<MySQLSchemaQueries.ForeignKeyConstraint> constraints = dbType == DBType.POSTGRESQL
+                ? query(PostgreSQLSchemaQueries.foreignKeyConstraintsOf(referencedTable))
+                : query(MySQLSchemaQueries.foreignKeyConstraintsOf(referencedTable));
 
         for (MySQLSchemaQueries.ForeignKeyConstraint constraint : constraints) {
-            // Uses information from https://stackoverflow.com/a/34574758
-            execute(ALTER_TABLE + constraint.getTable() +
-                    " DROP FOREIGN KEY " + constraint.getConstraintName());
+            if (dbType == DBType.POSTGRESQL) {
+                execute(ALTER_TABLE + constraint.getTable() +
+                        " DROP CONSTRAINT " + constraint.getConstraintName());
+            } else {
+                // Uses information from https://stackoverflow.com/a/34574758
+                execute(ALTER_TABLE + constraint.getTable() +
+                        " DROP FOREIGN KEY " + constraint.getConstraintName());
+            }
         }
     }
 
     protected void ensureNoForeignKeyConstraints(String table) {
-        if (dbType != DBType.MYSQL) {
+        if (dbType == DBType.SQLITE) {
             return;
         }
 
-        List<MySQLSchemaQueries.ForeignKeyConstraint> constraints = query(MySQLSchemaQueries.foreignKeyConstraintsOf(table));
+        List<MySQLSchemaQueries.ForeignKeyConstraint> constraints = dbType == DBType.POSTGRESQL
+                ? query(PostgreSQLSchemaQueries.foreignKeyConstraintsOf(table))
+                : query(MySQLSchemaQueries.foreignKeyConstraintsOf(table));
 
         if (constraints != null && !constraints.isEmpty()) {
             throw new DBOpException("Table '" + table + "' has constraints '" + constraints + "'");
@@ -152,6 +167,8 @@ public abstract class Patch extends OperationCriticalTransaction {
     }
 
     protected int columnVarcharLength(String table, String column) {
-        return dbType == DBType.SQLITE ? Integer.MAX_VALUE : query(MySQLSchemaQueries.columnVarcharLength(table, column));
+        if (dbType == DBType.SQLITE) return Integer.MAX_VALUE;
+        if (dbType == DBType.POSTGRESQL) return query(PostgreSQLSchemaQueries.columnVarcharLength(table, column));
+        return query(MySQLSchemaQueries.columnVarcharLength(table, column));
     }
 }

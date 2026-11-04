@@ -37,6 +37,7 @@ public class BukkitDBSystem extends DBSystem {
     public BukkitDBSystem(
             Locale locale,
             MySQLDB mySQLDB,
+            PostgreSQLDB postgreSQLDB,
             SQLiteDB.Factory sqLiteDB,
             PlanConfig config,
             PluginLogger logger
@@ -44,6 +45,7 @@ public class BukkitDBSystem extends DBSystem {
         super(config, locale, sqLiteDB, logger);
 
         databases.add(mySQLDB);
+        databases.add(postgreSQLDB);
         databases.add(sqLiteDB.usingDefaultFile());
     }
 

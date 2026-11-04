@@ -31,7 +31,8 @@ import java.util.Optional;
 public enum DBType {
 
     MYSQL("MySQL", true, new Sql.MySQL()),
-    SQLITE("SQLite", false, new Sql.SQLite());
+    SQLITE("SQLite", false, new Sql.SQLite()),
+    POSTGRESQL("PostgreSQL", false, new Sql.PostgreSQL());
 
     private final String name;
     private final String configName;

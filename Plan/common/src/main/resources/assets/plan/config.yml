@@ -22,7 +22,7 @@ Plugin:
   Configuration:
     Allow_proxy_to_manage_settings: true
 # -----------------------------------------------------
-# Supported databases: SQLite, MySQL
+# Supported databases: SQLite, MySQL, PostgreSQL
 # -----------------------------------------------------
 Database:
   Type: SQLite
@@ -34,6 +34,18 @@ Database:
     Database: Plan
     # Launch options to append after mysql driver address
     Launch_options: "?rewriteBatchedStatements=true&serverTimezone=UTC"
+    Max_connections: 8
+    Max_Lifetime:
+      Time: 25
+      Unit: MINUTES
+  PostgreSQL:
+    Host: localhost
+    Port: 5432
+    User: postgres
+    Password: minecraft
+    Database: plan
+    # Launch options to append after postgresql driver address
+    Launch_options: "?sslmode=prefer"
     Max_connections: 8
     Max_Lifetime:
       Time: 25

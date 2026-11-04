@@ -121,6 +121,50 @@ public class DBPreparer {
         return Optional.empty();
     }
 
+    public Optional<String> setUpPostgreSQLSettings(PlanConfig config) {
+        String database = System.getenv(CIProperties.POSTGRES_DB);
+        String user = System.getenv(CIProperties.POSTGRES_USER);
+        String pass = System.getenv(CIProperties.POSTGRES_PASS);
+        String host = System.getenv(CIProperties.POSTGRES_HOST);
+        String port = System.getenv(CIProperties.POSTGRES_PORT);
+        if (database == null || user == null) {
+            return Optional.empty();
+        }
+
+        String dbName = DBType.POSTGRESQL.getName();
+
+        config.set(DatabaseSettings.POSTGRESQL_DATABASE, database);
+        config.set(DatabaseSettings.POSTGRESQL_USER, user);
+        config.set(DatabaseSettings.POSTGRESQL_PASS, pass != null ? pass : "");
+        config.set(DatabaseSettings.POSTGRESQL_HOST, host != null ? host : "127.0.0.1");
+        config.set(DatabaseSettings.POSTGRESQL_PORT, port != null ? port : "5432");
+        // Tests run against servers that may not have SSL configured
+        config.set(DatabaseSettings.POSTGRESQL_LAUNCH_OPTIONS, "?sslmode=disable");
+        config.set(DatabaseSettings.TYPE, dbName);
+        return Optional.of(database);
+    }
+
+    public Optional<Database> preparePostgreSQL() {
+        PlanConfig config = dependencies.config();
+        Optional<String> formattedDB = setUpPostgreSQLSettings(config);
+        if (formattedDB.isPresent()) {
+            SQLDB postgreSQL = prepareDBByName(DBType.POSTGRESQL.getName());
+            String user = config.get(DatabaseSettings.POSTGRESQL_USER);
+            postgreSQL.executeTransaction(new Transaction() {
+                @Override
+                protected void performOperations() {
+                    // Reset the database to a clean state
+                    execute("DROP SCHEMA public CASCADE");
+                    execute("CREATE SCHEMA public");
+                    execute("GRANT ALL ON SCHEMA public TO " + user);
+                    execute("GRANT ALL ON SCHEMA public TO public");
+                }
+            });
+            return Optional.of(postgreSQL);
+        }
+        return Optional.empty();
+    }
+
     private SQLDB prepareDBByName(String dbName) {
         PlanConfig config = dependencies.config();
         config.set(WebserverSettings.PORT, testPortNumber);

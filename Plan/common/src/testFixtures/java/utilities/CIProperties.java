@@ -29,6 +29,11 @@ public class CIProperties {
     public static final String MYSQL_USER = "MYSQL_USER";
     public static final String MYSQL_PASS = "MYSQL_PASS";
     public static final String MYSQL_PORT = "MYSQL_PORT";
+    public static final String POSTGRES_DB = "POSTGRES_DB";
+    public static final String POSTGRES_USER = "POSTGRES_USER";
+    public static final String POSTGRES_PASS = "POSTGRES_PASS";
+    public static final String POSTGRES_HOST = "POSTGRES_HOST";
+    public static final String POSTGRES_PORT = "POSTGRES_PORT";
     public static final String CHROME_DRIVER = "CHROMEDRIVER";
 
     private CIProperties() {

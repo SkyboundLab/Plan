@@ -18,6 +18,7 @@ package com.djrapitops.plan.storage.database.transactions.init;
 
 import com.djrapitops.plan.storage.database.DBType;
 import com.djrapitops.plan.storage.database.queries.schema.MySQLSchemaQueries;
+import com.djrapitops.plan.storage.database.queries.schema.PostgreSQLSchemaQueries;
 import com.djrapitops.plan.storage.database.sql.tables.*;
 import com.djrapitops.plan.storage.database.sql.tables.extension.ExtensionPlayerTableValueTable;
 import com.djrapitops.plan.storage.database.sql.tables.extension.ExtensionServerTableValueTable;
@@ -96,9 +97,14 @@ public class CreateIndexTransaction extends Transaction {
             boolean indexExists = query(MySQLSchemaQueries.doesIndexExist(indexName, tableName));
             if (indexExists) return;
         }
+        // PostgreSQL has no CREATE INDEX IF NOT EXISTS, so check pg_indexes instead
+        if (dbType == DBType.POSTGRESQL) {
+            boolean indexExists = query(PostgreSQLSchemaQueries.doesIndexExist(indexName, tableName));
+            if (indexExists) return;
+        }
 
         TextStringBuilder sql = new TextStringBuilder("CREATE INDEX ");
-        if (!isMySQL) {
+        if (dbType == DBType.SQLITE) {
             sql.append("IF NOT EXISTS ");
         }
         sql.append(indexName).append(" ON ").append(tableName);

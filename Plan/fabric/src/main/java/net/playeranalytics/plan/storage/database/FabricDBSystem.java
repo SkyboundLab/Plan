@@ -21,6 +21,7 @@ import com.djrapitops.plan.settings.config.paths.DatabaseSettings;
 import com.djrapitops.plan.settings.locale.Locale;
 import com.djrapitops.plan.storage.database.DBSystem;
 import com.djrapitops.plan.storage.database.MySQLDB;
+import com.djrapitops.plan.storage.database.PostgreSQLDB;
 import com.djrapitops.plan.storage.database.SQLiteDB;
 import net.playeranalytics.plugin.server.PluginLogger;
 
@@ -40,6 +41,7 @@ public class FabricDBSystem extends DBSystem {
     public FabricDBSystem(
             Locale locale,
             MySQLDB mySQLDB,
+            PostgreSQLDB postgreSQLDB,
             SQLiteDB.Factory sqLiteDB,
             PlanConfig config,
             PluginLogger logger
@@ -47,6 +49,7 @@ public class FabricDBSystem extends DBSystem {
         super(config, locale, sqLiteDB, logger);
 
         databases.add(mySQLDB);
+        databases.add(postgreSQLDB);
         databases.add(sqLiteDB.usingDefaultFile());
     }
 

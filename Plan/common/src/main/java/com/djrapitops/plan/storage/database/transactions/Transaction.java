@@ -26,6 +26,7 @@ import com.djrapitops.plan.storage.database.queries.Query;
 import com.djrapitops.plan.storage.database.queries.QueryAPIQuery;
 import com.djrapitops.plan.storage.database.queries.QueryStatement;
 import com.djrapitops.plan.storage.database.queries.schema.MySQLSchemaQueries;
+import com.djrapitops.plan.storage.database.queries.schema.PostgreSQLSchemaQueries;
 import com.djrapitops.plan.storage.database.queries.schema.SQLiteSchemaQueries;
 import com.djrapitops.plan.storage.database.transactions.patches.Patch;
 import com.djrapitops.plan.utilities.logging.ErrorContext;
@@ -100,17 +101,22 @@ public abstract class Transaction {
 
         // Retry if deadlock occurs.
         int errorCode = statementFail.getErrorCode();
+        String sqlState = statementFail.getSQLState();
         boolean mysqlOutdatedRead = dbType == DBType.MYSQL && errorCode == 1020;
         boolean mySQLDeadlock = dbType == DBType.MYSQL && errorCode == 1213;
-        boolean deadlocked = mySQLDeadlock || statementFail instanceof SQLTransactionRollbackException;
-        boolean lockWaitTimeout = errorCode == 1205;
-        boolean duplicateEntry = errorCode == 1062;
+        // PostgreSQL reports deadlocks, lock waits and duplicates via SQLState instead of error codes
+        boolean pgDeadlock = dbType == DBType.POSTGRESQL && "40P01".equals(sqlState);
+        boolean pgLockWaitTimeout = dbType == DBType.POSTGRESQL && "55P03".equals(sqlState);
+        boolean pgDuplicateEntry = dbType == DBType.POSTGRESQL && "23505".equals(sqlState);
+        boolean deadlocked = mySQLDeadlock || pgDeadlock || statementFail instanceof SQLTransactionRollbackException;
+        boolean lockWaitTimeout = errorCode == 1205 || pgLockWaitTimeout;
+        boolean duplicateEntry = errorCode == 1062 || pgDuplicateEntry;
         if (attempts < ATTEMPT_LIMIT && (mysqlOutdatedRead || deadlocked || duplicateEntry || lockWaitTimeout)) {
             executeTransaction(db); // Recurse to attempt again.
             return;
         }
 
-        if (dbType == DBType.MYSQL && lockWaitTimeout) {
+        if (lockWaitTimeout && dbType != DBType.SQLITE) {
             if (!db.isUnderHeavyLoad()) {
                 db.getLogger().warn("Database appears to be under heavy load. Dropping some unimportant transactions and adding short pauses for next 10 minutes.");
                 db.getRunnableFactory().create(db::assumeNoMoreHeavyLoad)
@@ -192,7 +198,7 @@ public abstract class Transaction {
     }
 
     private void setIsolationLevel() {
-        if (dbType == DBType.MYSQL && attempts == 1) {
+        if ((dbType == DBType.MYSQL || dbType == DBType.POSTGRESQL) && attempts == 1) {
             IsolationLevel desiredIsolationLevel = getDesiredIsolationLevel();
             if (desiredIsolationLevel != IsolationLevel.UNCHANGED) {
                 execute("SET TRANSACTION ISOLATION LEVEL " + desiredIsolationLevel.name().replace('_', ' '));
@@ -302,6 +308,8 @@ public abstract class Transaction {
                 return query(SQLiteSchemaQueries.doesTableExist(tableName));
             case MYSQL:
                 return query(MySQLSchemaQueries.doesTableExist(tableName));
+            case POSTGRESQL:
+                return query(PostgreSQLSchemaQueries.doesTableExist(tableName));
             default:
                 throw new IllegalStateException("Unsupported Database Type: " + dbType.getName());
         }

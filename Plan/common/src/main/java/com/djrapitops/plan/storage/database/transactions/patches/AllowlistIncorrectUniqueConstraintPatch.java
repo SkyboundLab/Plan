@@ -18,6 +18,7 @@ package com.djrapitops.plan.storage.database.transactions.patches;
 
 import com.djrapitops.plan.storage.database.DBType;
 import com.djrapitops.plan.storage.database.queries.QueryAllStatement;
+import com.djrapitops.plan.storage.database.queries.schema.PostgreSQLSchemaQueries;
 import com.djrapitops.plan.storage.database.sql.tables.AllowlistBounceTable;
 
 import java.sql.ResultSet;
@@ -35,8 +36,15 @@ public class AllowlistIncorrectUniqueConstraintPatch extends Patch {
 
     @Override
     public boolean hasBeenApplied() {
-        return (dbType == DBType.SQLITE ? !hasUniqueIndexSqlite() : !hasUniqueIndexMySQL())
+        boolean hasUniqueIndex = dbType == DBType.SQLITE ? hasUniqueIndexSqlite()
+                : dbType == DBType.POSTGRESQL ? hasUniqueIndexPostgreSQL()
+                : hasUniqueIndexMySQL();
+        return !hasUniqueIndex
                 && !hasTable("temp_" + TABLE_NAME);
+    }
+
+    private boolean hasUniqueIndexPostgreSQL() {
+        return query(PostgreSQLSchemaQueries.doesUniqueIndexExist("uuid_unique", TABLE_NAME));
     }
 
     private boolean hasUniqueIndexSqlite() {

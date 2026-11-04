@@ -32,6 +32,7 @@ import com.djrapitops.plan.storage.database.queries.objects.lookup.LookupTable;
 import com.djrapitops.plan.storage.database.queries.objects.lookup.LookupTableQueries;
 import com.djrapitops.plan.storage.database.queries.objects.lookup.ServerUUIDIdentifiable;
 import com.djrapitops.plan.storage.database.queries.schema.MySQLSchemaQueries;
+import com.djrapitops.plan.storage.database.queries.schema.PostgreSQLSchemaQueries;
 import com.djrapitops.plan.storage.database.sql.tables.*;
 import com.djrapitops.plan.storage.database.sql.tables.webuser.*;
 import com.djrapitops.plan.storage.database.transactions.StoreServerInformationTransaction;
@@ -546,12 +547,18 @@ public class DatabaseCopyProcessor implements CriticalRunnable {
         String indexName = getIndexName(tableName, columns);
         String uniqueConstraintMySQL = "ALTER TABLE " + tableName + " ADD UNIQUE INDEX " + indexName + " (" + columns + ")";
         String uniqueConstraintSQLite = "CREATE UNIQUE INDEX IF NOT EXISTS " + indexName + " ON " + tableName + " (" + columns + ")";
+        // PostgreSQL has no IF NOT EXISTS for indexes and no ALTER TABLE ADD UNIQUE INDEX
+        String uniqueConstraintPostgreSQL = "CREATE UNIQUE INDEX " + indexName + " ON " + tableName + " (" + columns + ")";
 
-        boolean isMySQL = toDB.getType() == DBType.MYSQL;
-        if (isMySQL) {
+        DBType toType = toDB.getType();
+        if (toType == DBType.MYSQL) {
             boolean indexExists = toDB.query(MySQLSchemaQueries.doesIndexExist(indexName, tableName));
             if (indexExists) return;
             toDB.executeInTransaction(uniqueConstraintMySQL).join();
+        } else if (toType == DBType.POSTGRESQL) {
+            boolean indexExists = toDB.query(PostgreSQLSchemaQueries.doesIndexExist(indexName, tableName));
+            if (indexExists) return;
+            toDB.executeInTransaction(uniqueConstraintPostgreSQL).join();
         } else {
             toDB.executeInTransaction(uniqueConstraintSQLite).join();
         }

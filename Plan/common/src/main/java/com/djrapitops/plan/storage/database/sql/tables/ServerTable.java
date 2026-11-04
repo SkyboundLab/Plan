@@ -99,6 +99,7 @@ public class ServerTable {
     public static String selectGameServerIds() {
         return '(' + SELECT + TABLE_NAME + '.' + ID +
                 FROM + TABLE_NAME +
-                WHERE + TABLE_NAME + '.' + PROXY + "=0)";
+                // FALSE works as a boolean literal on MySQL (0), SQLite and PostgreSQL
+                WHERE + TABLE_NAME + '.' + PROXY + "=FALSE)";
     }
 }

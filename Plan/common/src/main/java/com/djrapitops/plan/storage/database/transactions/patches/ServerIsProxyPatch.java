@@ -41,7 +41,8 @@ public class ServerIsProxyPatch extends Patch {
 
     @Override
     protected void applyPatch() {
-        addColumn(ServerTable.TABLE_NAME, ServerTable.PROXY + ' ' + Sql.BOOL + " DEFAULT 0");
+        // FALSE works as a boolean default on MySQL (0), SQLite and PostgreSQL
+        addColumn(ServerTable.TABLE_NAME, ServerTable.PROXY + ' ' + Sql.BOOL + " DEFAULT FALSE");
 
         String populateFieldSql = "UPDATE " + ServerTable.TABLE_NAME + " SET " + ServerTable.PROXY + "=?" +
                 WHERE + ServerTable.NAME + "=?";

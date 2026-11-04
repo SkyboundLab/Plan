@@ -21,6 +21,7 @@ import com.djrapitops.plan.settings.config.paths.DatabaseSettings;
 import com.djrapitops.plan.settings.locale.Locale;
 import com.djrapitops.plan.storage.database.DBSystem;
 import com.djrapitops.plan.storage.database.MySQLDB;
+import com.djrapitops.plan.storage.database.PostgreSQLDB;
 import com.djrapitops.plan.storage.database.SQLiteDB;
 import dagger.Module;
 import dagger.Provides;
@@ -37,6 +38,7 @@ public class DBSystemModule {
             Locale locale,
             SQLiteDB.Factory sqLiteDB,
             MySQLDB mySQLDB,
+            PostgreSQLDB postgreSQLDB,
             PluginLogger logger
     ) {
         return new DBSystem(config, locale, sqLiteDB, logger) {
@@ -44,6 +46,7 @@ public class DBSystemModule {
             public void enable() {
                 databases.add(sqLiteDB.usingDefaultFile());
                 databases.add(mySQLDB);
+                databases.add(postgreSQLDB);
                 String dbType = config.get(DatabaseSettings.TYPE).toLowerCase().trim();
                 db = getActiveDatabaseByName(dbType);
                 super.enable();

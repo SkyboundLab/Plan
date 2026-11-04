@@ -49,14 +49,14 @@ public class DeleteUrlOpenEventsFromExtensionComponentsPatch extends Patch {
             }
             String nullCharSql = SELECT + ExtensionPlayerValueTable.COMPONENT_VALUE +
                     FROM + ExtensionPlayerValueTable.TABLE_NAME +
-                    WHERE + "INSTR(" + ExtensionPlayerValueTable.COMPONENT_VALUE + ", CHAR(0))";
+                    WHERE + dbType.getSql().containsNullChar(ExtensionPlayerValueTable.COMPONENT_VALUE);
             if (query(db -> db.queryOptional(nullCharSql, row -> row.getString(1)))
                     .isPresent()) {
                 return false;
             }
             String nullCharServerSql = SELECT + ExtensionServerValueTable.COMPONENT_VALUE +
                     FROM + ExtensionPlayerValueTable.TABLE_NAME +
-                    WHERE + "INSTR(" + ExtensionServerValueTable.COMPONENT_VALUE + ", CHAR(0))";
+                    WHERE + dbType.getSql().containsNullChar(ExtensionServerValueTable.COMPONENT_VALUE);
             if (query(db -> db.queryOptional(nullCharServerSql, row -> row.getString(1)))
                     .isPresent()) {
                 return false;
@@ -71,10 +71,10 @@ public class DeleteUrlOpenEventsFromExtensionComponentsPatch extends Patch {
         for (String invalidString : invalidStrings) {
             execute("DELETE FROM " + ExtensionPlayerValueTable.TABLE_NAME +
                     WHERE + ExtensionPlayerValueTable.COMPONENT_VALUE + " LIKE '%" + invalidString + "%'" +
-                    OR + "INSTR(" + ExtensionPlayerValueTable.COMPONENT_VALUE + ", CHAR(0))");
+                    OR + dbType.getSql().containsNullChar(ExtensionPlayerValueTable.COMPONENT_VALUE));
             execute("DELETE FROM " + ExtensionServerValueTable.TABLE_NAME +
                     WHERE + ExtensionServerValueTable.COMPONENT_VALUE + " LIKE '%" + invalidString + "%'" +
-                    OR + "INSTR(" + ExtensionServerValueTable.COMPONENT_VALUE + ", CHAR(0))");
+                    OR + dbType.getSql().containsNullChar(ExtensionServerValueTable.COMPONENT_VALUE));
         }
     }
 }

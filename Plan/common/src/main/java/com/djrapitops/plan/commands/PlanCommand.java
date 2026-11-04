@@ -41,7 +41,7 @@ import java.util.Optional;
 @Singleton
 public class PlanCommand {
 
-    private static final String DB_ARG_OPTIONS = "MySQL/SQLite";
+    private static final String DB_ARG_OPTIONS = "MySQL/PostgreSQL/SQLite";
     private final String commandName;
     private final ColorScheme colors;
     private final Confirmation confirmation;

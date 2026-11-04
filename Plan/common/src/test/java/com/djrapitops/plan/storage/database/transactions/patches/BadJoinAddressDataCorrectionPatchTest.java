@@ -18,6 +18,7 @@ package com.djrapitops.plan.storage.database.transactions.patches;
 
 import com.djrapitops.plan.gathering.domain.FinishedSession;
 import com.djrapitops.plan.gathering.domain.event.JoinAddress;
+import com.djrapitops.plan.storage.database.DBType;
 import com.djrapitops.plan.storage.database.Database;
 import com.djrapitops.plan.storage.database.DatabaseTestPreparer;
 import com.djrapitops.plan.storage.database.queries.objects.JoinAddressQueries;
@@ -26,6 +27,7 @@ import com.djrapitops.plan.storage.database.transactions.Transaction;
 import com.djrapitops.plan.storage.database.transactions.events.StoreJoinAddressTransaction;
 import com.djrapitops.plan.storage.database.transactions.events.StoreSessionTransaction;
 import com.djrapitops.plan.storage.database.transactions.events.StoreWorldNameTransaction;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import utilities.RandomData;
 
@@ -59,6 +61,8 @@ public interface BadJoinAddressDataCorrectionPatchTest extends DatabaseTestPrepa
 
     @Test
     default void joinAddressWithBadDataIsCorrectedWithOriginal() {
+        // PostgreSQL text columns can not contain null characters, so bad data can not exist there
+        Assumptions.assumeFalse(db().getType() == DBType.POSTGRESQL);
         Database db = db();
         String correct = "correct_address";
         String bad = "correct_address\u000062.6.…zwyzyty0zmnlowzmmtqynmm";
@@ -80,6 +84,8 @@ public interface BadJoinAddressDataCorrectionPatchTest extends DatabaseTestPrepa
 
     @Test
     default void joinAddressWithBadDataIsCorrectedWithOriginalPlusSessions() {
+        // PostgreSQL text columns can not contain null characters, so bad data can not exist there
+        Assumptions.assumeFalse(db().getType() == DBType.POSTGRESQL);
         Database db = db();
         String correct = "correct_address";
         String bad = "correct_address\u000062.6.…zwyzyty0zmnlowzmmtqynmm";
@@ -107,6 +113,8 @@ public interface BadJoinAddressDataCorrectionPatchTest extends DatabaseTestPrepa
 
     @Test
     default void joinAddressWithBadDataIsCorrectedWithoutOriginal() {
+        // PostgreSQL text columns can not contain null characters, so bad data can not exist there
+        Assumptions.assumeFalse(db().getType() == DBType.POSTGRESQL);
         Database db = db();
         String correct = "correct_address";
         String bad = "correct_address\u000062.6.…zwyzyty0zmnlowzmmtqynmm";
@@ -127,6 +135,8 @@ public interface BadJoinAddressDataCorrectionPatchTest extends DatabaseTestPrepa
 
     @Test
     default void joinAddressWithBadDataIsCorrectedPerformanceTest() {
+        // PostgreSQL text columns can not contain null characters, so bad data can not exist there
+        Assumptions.assumeFalse(db().getType() == DBType.POSTGRESQL);
         Database db = db();
         String correct = "correct_address";
         String badPrefix = "correct_address\u0000";

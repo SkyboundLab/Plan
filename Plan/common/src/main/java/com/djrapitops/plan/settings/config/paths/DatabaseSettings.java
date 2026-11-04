@@ -39,6 +39,15 @@ public class DatabaseSettings {
     public static final Setting<String> MYSQL_LAUNCH_OPTIONS = new StringSetting("Database.MySQL.Launch_options");
     public static final Setting<Integer> MAX_CONNECTIONS = new IntegerSetting("Database.MySQL.Max_connections", value -> value > 0);
     public static final Setting<Long> MAX_LIFETIME = new TimeSetting("Database.MySQL.Max_Lifetime");
+    // PostgreSQL settings - defaults allow old config files without the section to keep working
+    public static final Setting<String> POSTGRESQL_HOST = new StringSetting("Database.PostgreSQL.Host", "localhost");
+    public static final Setting<String> POSTGRESQL_PORT = new StringSetting("Database.PostgreSQL.Port", NumberUtils::isParsable, "5432");
+    public static final Setting<String> POSTGRESQL_USER = new StringSetting("Database.PostgreSQL.User", "postgres");
+    public static final Setting<String> POSTGRESQL_PASS = new StringSetting("Database.PostgreSQL.Password", "");
+    public static final Setting<String> POSTGRESQL_DATABASE = new StringSetting("Database.PostgreSQL.Database", "plan");
+    public static final Setting<String> POSTGRESQL_LAUNCH_OPTIONS = new StringSetting("Database.PostgreSQL.Launch_options", "?sslmode=prefer");
+    public static final Setting<Integer> POSTGRESQL_MAX_CONNECTIONS = new IntegerSetting("Database.PostgreSQL.Max_connections", value -> value > 0);
+    public static final Setting<Long> POSTGRESQL_MAX_LIFETIME = new TimeSetting("Database.PostgreSQL.Max_Lifetime");
 
     private DatabaseSettings() {
         /* static variable class */

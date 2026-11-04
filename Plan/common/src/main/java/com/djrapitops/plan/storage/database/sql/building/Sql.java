@@ -126,12 +126,26 @@ public abstract class Sql {
     }
 
     public static String concat(DBType dbType, String one, String two) {
-        if (dbType == DBType.MYSQL) {
-            return "CONCAT(" + one + ',' + two + ")";
-        } else if (dbType == DBType.SQLITE) {
-            return one + " || " + two;
-        }
-        return one + two;
+        return dbType.getSql().concat(one, two);
+    }
+
+    /**
+     * Dialect specific string concatenation expression.
+     * <p>
+     * Defaults to the SQL standard {@code ||} operator (SQLite, PostgreSQL),
+     * MySQL overrides this with {@code CONCAT(..)}.
+     */
+    public String concat(String one, String two) {
+        return one + " || " + two;
+    }
+
+    /**
+     * Maps a generic column type (see {@link #INT}, {@link #DOUBLE} etc.) to a dialect specific column type.
+     * <p>
+     * Defaults to the type as-is.
+     */
+    public String columnType(String type) {
+        return type;
     }
 
     public static Double getDoubleOrNull(ResultSet set, String column) throws SQLException {
@@ -158,9 +172,60 @@ public abstract class Sql {
 
     public abstract String insertOrIgnore();
 
+    /**
+     * Suffix appended after an {@link #insertOrIgnore()} statement.
+     * <p>
+     * Needed by dialects where "insert or ignore" can not be expressed as a statement prefix
+     * (PostgreSQL uses {@code ON CONFLICT DO NOTHING} at the end of the statement).
+     */
+    public String insertOrIgnoreSuffix() {
+        return "";
+    }
+
     public abstract String least(String values);
 
     public abstract String greatest(String values);
+
+    /**
+     * SQL condition matching rows where the given column contains a null character (U+0000).
+     * <p>
+     * Defaults to {@code INSTR(column, CHAR(0))} (MySQL, SQLite).
+     * PostgreSQL overrides this with {@code FALSE} since text columns can not contain U+0000.
+     */
+    public String containsNullChar(String column) {
+        return "INSTR(" + column + ", CHAR(0))";
+    }
+
+    /**
+     * ORDER BY clause for a text column with byte-wise (binary) ordering.
+     * <p>
+     * Defaults to a plain {@code ORDER BY column} (MySQL, SQLite).
+     * PostgreSQL overrides this with {@code COLLATE "C"} since a database created with a locale
+     * collation (e.g. en_US.utf8) orders punctuation and case differently than MySQL/SQLite.
+     */
+    public String orderByText(String column) {
+        return ORDER_BY + column;
+    }
+
+    /**
+     * Aggregates distinct values of an expression into a comma separated string.
+     * <p>
+     * Defaults to {@code GROUP_CONCAT(DISTINCT ..)} (MySQL, SQLite),
+     * PostgreSQL overrides this with {@code string_agg}.
+     */
+    public String groupConcatDistinct(String expr) {
+        return "GROUP_CONCAT(DISTINCT " + expr + ")";
+    }
+
+    /**
+     * Aggregates values of an expression into a string separated by the given SQL string literal.
+     * <p>
+     * Defaults to {@code GROUP_CONCAT(.., sep)} (MySQL, SQLite),
+     * PostgreSQL overrides this with {@code string_agg}.
+     */
+    public String groupConcat(String expr, String separator) {
+        return "GROUP_CONCAT(" + expr + ',' + separator + ")";
+    }
 
     public String lockForUpdate() {
         return "";
@@ -218,6 +283,11 @@ public abstract class Sql {
         public String lockForUpdate() {
             return " FOR UPDATE";
         }
+
+        @Override
+        public String concat(String one, String two) {
+            return "CONCAT(" + one + ',' + two + ")";
+        }
     }
 
     // https://sqlite.org/lang_datefunc.html
@@ -266,6 +336,96 @@ public abstract class Sql {
         @Override
         public String greatest(String values) {
             return "MAX(" + values + ")";
+        }
+    }
+
+    // https://www.postgresql.org/docs/current/functions-datetime.html
+    public static class PostgreSQL extends Sql {
+
+        @Override
+        public String epochSecondToDate(String sql) {
+            return "to_timestamp(" + sql + ')';
+        }
+
+        @Override
+        public String dateToEpochSecond(String sql) {
+            return "CAST(EXTRACT(EPOCH FROM " + sql + ") AS BIGINT)";
+        }
+
+        @Override
+        public String dateToDayStamp(String sql) {
+            return "CAST(" + sql + " AS DATE)";
+        }
+
+        @Override
+        public String dateToHourStamp(String sql) {
+            return "date_trunc('hour'," + sql + ')';
+        }
+
+        @Override
+        public String dateToDayOfWeek(String sql) {
+            // DOW: 0 = Sunday .. 6 = Saturday, +1 to match MySQL DAYOFWEEK (1 = Sunday .. 7 = Saturday)
+            return "CAST(EXTRACT(DOW FROM " + sql + ") AS INTEGER) + 1";
+        }
+
+        @Override
+        public String dateToHour(String sql) {
+            return "CAST(EXTRACT(HOUR FROM " + sql + ") AS INTEGER)";
+        }
+
+        @Override
+        public String insertOrIgnore() {
+            return "INSERT INTO ";
+        }
+
+        @Override
+        public String insertOrIgnoreSuffix() {
+            return " ON CONFLICT DO NOTHING";
+        }
+
+        @Override
+        public String least(String values) {
+            return "LEAST(" + values + ")";
+        }
+
+        @Override
+        public String greatest(String values) {
+            return "GREATEST(" + values + ")";
+        }
+
+        @Override
+        public String groupConcatDistinct(String expr) {
+            return "string_agg(DISTINCT " + expr + ", ',')";
+        }
+
+        @Override
+        public String groupConcat(String expr, String separator) {
+            return "string_agg(" + expr + ", " + separator + ")";
+        }
+
+        // PostgreSQL does not allow FOR UPDATE with aggregate functions, GROUP BY or DISTINCT,
+        // which several queries combine it with - so no row locking is used (base implementation).
+        // Concurrent writes are handled by unique constraints and SQLState based retries instead.
+
+        @Override
+        public String containsNullChar(String column) {
+            // PostgreSQL text columns can not contain U+0000, and CHAR(0) is not valid SQL there
+            return "FALSE";
+        }
+
+        @Override
+        public String orderByText(String column) {
+            // Byte-wise ordering to match MySQL/SQLite regardless of the database's locale collation
+            return ORDER_BY + column + " COLLATE \"C\"";
+        }
+
+        @Override
+        public String columnType(String type) {
+            // PostgreSQL does not have a type called "double"
+            if (DOUBLE.equals(type)) {
+                return "double precision";
+            }
+            return type;
         }
     }
 }
