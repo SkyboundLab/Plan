@@ -1,7 +1,15 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-apply plugin: "net.fabricmc.fabric-loom"
+// NOTE: "net.fabricmc.fabric-loom" is loom's *no-remap* plugin id (hardcodes disableObfuscation=true,
+// fine for MC 26.x which ships un-obfuscated). For obfuscated MC like 1.20.1 we need the remap variant.
+apply plugin: "net.fabricmc.fabric-loom-remap"
 apply plugin: "com.gradleup.shadow"
+
+repositories {
+    // Local repo with AW-neutralized Fabric API 0.92.2+1.20.1 modules (upstream purged 1.20.x modules)
+    maven { url = uri("/tmp/opencode/localrepo") }
+    maven { url = "https://maven.fabricmc.net/" } // Fabric
+}
 
 configurations {
     shade
@@ -16,13 +24,19 @@ dependencies {
 
     implementation "net.playeranalytics:platform-abstraction-layer-api:$palVersion"
 
-    minecraft "com.mojang:minecraft:26.3"
-    implementation "net.fabricmc:fabric-loader:0.19.5"
-    implementation("me.lucko:fabric-permissions-api:0.7.0")
+    minecraft "com.mojang:minecraft:1.20.1"
+    // MC <= 1.21.x jars are obfuscated; 26.x ships mojmap-named so upstream needs no mappings
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:0.15.11"
+    modImplementation("me.lucko:fabric-permissions-api:0.3.1") {
+        transitive = false // avoid its pom pulling a 26.3-era fabric-api BOM chain
+    }
 
     // Fabric API
     Set<String> apiModules = [
             "fabric-api-base",
+            "fabric-api-lookup-api-v1",
+            "fabric-transitive-access-wideners-v1",
             "fabric-command-api-v2",
             "fabric-entity-events-v1",
             "fabric-lifecycle-events-v1",
@@ -31,7 +45,7 @@ dependencies {
     ]
 
     apiModules.forEach {
-        implementation(fabricApi.module(it, "0.161.0+26.3"))
+        modImplementation("net.fabricmc.fabric-api:$it:0.92.2+1.20.1-awfix")
     }
 
     testImplementation(testFixtures(project(":common")))
@@ -39,7 +53,7 @@ dependencies {
 }
 
 compileJava {
-    options.release = 25
+    options.release = 17
 }
 
 processResources {
@@ -116,8 +130,17 @@ tasks.named("shadowJar", ShadowJar) {
 
     mergeServiceFiles()
 
+    // Stage the named (dev) jar; the production jar is produced by remapJar below
+    destinationDirectory.set(file("$rootDir/build/libs/"))
+    archiveFileName.set("PlanFabric-${project.version}-named.jar")
+}
+
+// Remap the shaded jar to intermediary (production 1.20.1 runtime namespace) and emit it to builds/
+tasks.named("remapJar") {
+    dependsOn tasks.named("shadowJar")
+    inputFile.set(tasks.named("shadowJar", ShadowJar).flatMap { it.archiveFile })
     destinationDirectory.set(file("$rootDir/builds/"))
     archiveFileName.set("PlanFabric-${project.version}.jar")
 }
 
-tasks.assemble.dependsOn tasks.shadowJar
+tasks.assemble.dependsOn tasks.named("remapJar")

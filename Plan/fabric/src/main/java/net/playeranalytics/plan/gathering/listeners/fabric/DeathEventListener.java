@@ -99,12 +99,16 @@ public class DeathEventListener implements FabricListener {
             }
         });
 
-        ServerEntityCombatEvents.AFTER_KILLED_OTHER_ENTITY.register((world, killer, killedEntity, damageSource) ->
+        // 1.20.1 Fabric API: 3-arg callback without DamageSource; pull it from the victim instead
+        ServerEntityCombatEvents.AFTER_KILLED_OTHER_ENTITY.register((world, killer, killedEntity) ->
                 {
                     if (!this.isEnabled) {
                         return;
                     }
-                    Entity directCause = Objects.requireNonNullElse(damageSource.getDirectEntity(), killer);
+                    DamageSource damageSource = killedEntity.getLastDamageSource();
+                    Entity directCause = damageSource != null && damageSource.getDirectEntity() != null
+                            ? damageSource.getDirectEntity()
+                            : killer;
                     PlanFabricEvents.ON_KILLED.invoker().onKilled(killedEntity, directCause, damageSource);
                 }
         );
@@ -198,7 +202,7 @@ public class DeathEventListener implements FabricListener {
 
     private String getItemInHand(ServerPlayer killer) {
         ItemStack itemInHand = killer.getMainHandItem();
-        return itemInHand.getItemName().getString();
+        return itemInHand.getHoverName().getString();
     }
 
     private Optional<ServerPlayer> getShooter(Projectile projectile) {

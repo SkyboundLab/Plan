@@ -146,7 +146,7 @@ public class FabricPingCounter extends TaskSystem.Task implements FabricListener
     }
 
     private int getPing(ServerPlayer player) {
-        return player.connection.latency();
+        return player.latency; // 1.20.1: public field on ServerPlayer (was connection.latency() in newer versions)
     }
 
     public void onPlayerJoin(ServerPlayer player) {

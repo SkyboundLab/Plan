@@ -48,7 +48,7 @@ public class FabricSensor implements ServerSensor<ServerLevel> {
         //Returns the ticks per second of the last 100 ticks
         double totalTickLength = 0;
         int count = 0;
-        for (long tickLength : server.getTickTimesNanos()) {
+        for (long tickLength : server.tickTimes) { // 1.20.1: public long[] field (getTickTimesNanos() is newer)
             if (tickLength == 0) continue; // Ignore uninitialized values in array
             totalTickLength += Math.max(tickLength, TimeUnit.MILLISECONDS.toNanos(50));
             count++;
@@ -106,6 +106,6 @@ public class FabricSensor implements ServerSensor<ServerLevel> {
 
     @Override
     public Optional<long[]> getMspt() {
-        return Optional.of(server.getTickTimesNanos());
+        return Optional.of(server.tickTimes);
     }
 }
