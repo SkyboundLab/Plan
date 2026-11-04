@@ -100,23 +100,12 @@ public abstract class Transaction {
         String rollbackStatusMsg = rollbackTransaction();
 
         // Retry if deadlock occurs.
-        int errorCode = statementFail.getErrorCode();
-        String sqlState = statementFail.getSQLState();
-        boolean mysqlOutdatedRead = dbType == DBType.MYSQL && errorCode == 1020;
-        boolean mySQLDeadlock = dbType == DBType.MYSQL && errorCode == 1213;
-        // PostgreSQL reports deadlocks, lock waits and duplicates via SQLState instead of error codes
-        boolean pgDeadlock = dbType == DBType.POSTGRESQL && "40P01".equals(sqlState);
-        boolean pgLockWaitTimeout = dbType == DBType.POSTGRESQL && "55P03".equals(sqlState);
-        boolean pgDuplicateEntry = dbType == DBType.POSTGRESQL && "23505".equals(sqlState);
-        boolean deadlocked = mySQLDeadlock || pgDeadlock || statementFail instanceof SQLTransactionRollbackException;
-        boolean lockWaitTimeout = errorCode == 1205 || pgLockWaitTimeout;
-        boolean duplicateEntry = errorCode == 1062 || pgDuplicateEntry;
-        if (attempts < ATTEMPT_LIMIT && (mysqlOutdatedRead || deadlocked || duplicateEntry || lockWaitTimeout)) {
+        if (attempts < ATTEMPT_LIMIT && isRetriable(statementFail)) {
             executeTransaction(db); // Recurse to attempt again.
             return;
         }
 
-        if (lockWaitTimeout && dbType != DBType.SQLITE) {
+        if (isLockWaitTimeout(statementFail) && dbType != DBType.SQLITE) {
             if (!db.isUnderHeavyLoad()) {
                 db.getLogger().warn("Database appears to be under heavy load. Dropping some unimportant transactions and adding short pauses for next 10 minutes.");
                 db.getRunnableFactory().create(db::assumeNoMoreHeavyLoad)
@@ -134,6 +123,36 @@ public abstract class Transaction {
         throw new DBOpException(failMsg + rollbackStatusMsg, statementFail, ErrorContext.builder()
                 .related("Attempts: " + attempts)
                 .build());
+    }
+
+    private boolean isRetriable(SQLException statementFail) {
+        return isOutdatedRead(statementFail)
+                || isDeadlocked(statementFail)
+                || isDuplicateEntry(statementFail)
+                || isLockWaitTimeout(statementFail);
+    }
+
+    private boolean isOutdatedRead(SQLException statementFail) {
+        return dbType == DBType.MYSQL && statementFail.getErrorCode() == 1020;
+    }
+
+    private boolean isDeadlocked(SQLException statementFail) {
+        if (statementFail instanceof SQLTransactionRollbackException) return true;
+        if (dbType == DBType.MYSQL) return statementFail.getErrorCode() == 1213;
+        // PostgreSQL reports deadlocks via SQLState instead of error codes
+        return dbType == DBType.POSTGRESQL && "40P01".equals(statementFail.getSQLState());
+    }
+
+    private boolean isLockWaitTimeout(SQLException statementFail) {
+        if (statementFail.getErrorCode() == 1205) return true;
+        // PostgreSQL reports lock wait timeouts via SQLState instead of error codes
+        return dbType == DBType.POSTGRESQL && "55P03".equals(statementFail.getSQLState());
+    }
+
+    private boolean isDuplicateEntry(SQLException statementFail) {
+        if (statementFail.getErrorCode() == 1062) return true;
+        // PostgreSQL reports duplicates via SQLState instead of error codes
+        return dbType == DBType.POSTGRESQL && "23505".equals(statementFail.getSQLState());
     }
 
     private String rollbackTransaction() {
