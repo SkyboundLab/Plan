@@ -78,16 +78,21 @@ public class QuerySvc implements QueryService {
 
     @Override
     public <T> T query(String sql, ThrowingFunction<PreparedStatement, T> performQuery) {
-        return dbSystem.getDatabase().query(new QueryAPIQuery<>(sql, performQuery));
+        Database database = dbSystem.getDatabase();
+        // Raw SQL from extensions may be written for another dialect - translate it
+        return database.query(new QueryAPIQuery<>(database.getSql().translateRawSQL(sql), performQuery));
     }
 
     @Override
     public CompletableFuture<Void> execute(String sql, ThrowingConsumer<PreparedStatement> performStatement) {
-        return dbSystem.getDatabase().executeTransaction(
+        Database database = dbSystem.getDatabase();
+        // Raw SQL from extensions may be written for another dialect - translate it
+        String translatedSql = database.getSql().translateRawSQL(sql);
+        return database.executeTransaction(
                 new Transaction() {
                     @Override
                     protected void performOperations() {
-                        execute(new QueryAPIExecutable(sql, performStatement));
+                        execute(new QueryAPIExecutable(translatedSql, performStatement));
                     }
                 }
         );
