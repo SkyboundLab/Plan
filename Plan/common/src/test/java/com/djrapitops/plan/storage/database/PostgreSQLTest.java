@@ -22,6 +22,7 @@ import com.djrapitops.plan.extension.ExtensionSvc;
 import com.djrapitops.plan.identification.Server;
 import com.djrapitops.plan.identification.ServerInfo;
 import com.djrapitops.plan.identification.ServerUUID;
+import com.djrapitops.plan.query.QuerySvc;
 import com.djrapitops.plan.settings.config.PlanConfig;
 import com.djrapitops.plan.storage.database.queries.ExtensionsDatabaseTest;
 import com.djrapitops.plan.storage.database.queries.filter.QueryFilters;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,7 +45,12 @@ import utilities.TestErrorLogger;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -144,6 +151,70 @@ class PostgreSQLTest implements DatabaseTest, DatabaseTestAggregate {
     @Override
     public File dataFolder() {
         return component.files().getDataFolder();
+    }
+
+    @Test
+    void rawSqlFromExtensionsIsTranslatedToPostgreSQL() {
+        // Reproduces the ViaVersion extension issue: raw MySQL DDL (AUTO_INCREMENT) sent through
+        // the Query API is not valid PostgreSQL, so the table was never created and later
+        // SELECT/INSERT/UPDATE failed with 'relation "plan_version_protocol" does not exist'.
+        QuerySvc querySvc = new QuerySvc(config(), dbSystem(), serverInfo(), new TestErrorLogger());
+        // Note: Query API consumers are responsible for executing the prepared statement,
+        // like the ViaVersion extension does.
+        querySvc.execute("DROP TABLE IF EXISTS plan_version_protocol", PreparedStatement::execute).join();
+        querySvc.execute(
+                "CREATE TABLE IF NOT EXISTS plan_version_protocol (" +
+                        "id int NOT NULL AUTO_INCREMENT," +
+                        "uuid varchar(36) NOT NULL UNIQUE," +
+                        "protocol_version int NOT NULL," +
+                        "PRIMARY KEY (id))",
+                PreparedStatement::execute
+        ).join();
+
+        UUID uuid = UUID.randomUUID();
+        querySvc.execute(
+                "INSERT INTO plan_version_protocol (uuid, protocol_version) VALUES (?, ?)",
+                statement -> {
+                    statement.setString(1, uuid.toString());
+                    statement.setInt(2, 763);
+                    statement.execute();
+                }
+        ).join();
+
+        List<Integer> protocolVersions = querySvc.query(
+                "SELECT protocol_version FROM plan_version_protocol WHERE uuid = ?",
+                statement -> {
+                    statement.setString(1, uuid.toString());
+                    List<Integer> versions = new ArrayList<>();
+                    ResultSet set = statement.executeQuery();
+                    while (set.next()) {
+                        versions.add(set.getInt(1));
+                    }
+                    return versions;
+                }
+        );
+        assertEquals(List.of(763), protocolVersions);
+
+        querySvc.execute(
+                "UPDATE plan_version_protocol SET protocol_version = ? WHERE uuid = ?",
+                statement -> {
+                    statement.setInt(1, 47);
+                    statement.setString(2, uuid.toString());
+                    statement.execute();
+                }
+        ).join();
+
+        Integer updated = querySvc.query(
+                "SELECT protocol_version FROM plan_version_protocol WHERE uuid = ?",
+                statement -> {
+                    statement.setString(1, uuid.toString());
+                    ResultSet set = statement.executeQuery();
+                    return set.next() ? set.getInt(1) : null;
+                }
+        );
+        assertEquals(47, updated);
+
+        querySvc.execute("DROP TABLE IF EXISTS plan_version_protocol", PreparedStatement::execute).join();
     }
 
 }

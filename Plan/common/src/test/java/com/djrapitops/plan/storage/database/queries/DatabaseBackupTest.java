@@ -328,7 +328,26 @@ public interface DatabaseBackupTest extends DatabaseTestPreparer {
     }
 
     default <T> Executable assertQueryResultIsEqual(Database one, Database two, Query<T> query) {
-        return () -> assertEquals(one.query(query), two.query(query));
+        return () -> assertEquals(normalizeForComparison(one.query(query)), normalizeForComparison(two.query(query)));
+    }
+
+    /**
+     * Sorts collections so that the comparison does not depend on row order,
+     * which is not guaranteed without an ORDER BY clause (e.g. on PostgreSQL).
+     */
+    private static Object normalizeForComparison(Object result) {
+        if (result instanceof Collection<?> collection) {
+            return collection.stream()
+                    .map(DatabaseBackupTest::normalizeForComparison)
+                    .sorted(Comparator.comparing(Object::toString))
+                    .toList();
+        }
+        if (result instanceof Map<?, ?> map) {
+            Map<Object, Object> normalized = new HashMap<>();
+            map.forEach((key, value) -> normalized.put(key, normalizeForComparison(value)));
+            return normalized;
+        }
+        return result;
     }
 
     @Test
