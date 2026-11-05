@@ -2,7 +2,7 @@ name: Build Development
 
 on:
   push:
-    branches: [master]
+    branches: [fabric-1.20.1]
 
 permissions:
   contents: write
@@ -38,7 +38,7 @@ jobs:
         uses: marvinpinto/action-automatic-releases@master
         with:
           title: "${{ env.NAME }}"
-          automatic_release_tag: "latest"
+          automatic_release_tag: "1.20.1"
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           files: "Plan/builds/*.jar"
-          prerelease: false
+          prerelease: true

@@ -6,8 +6,6 @@ apply plugin: "net.fabricmc.fabric-loom-remap"
 apply plugin: "com.gradleup.shadow"
 
 repositories {
-    // Local repo with AW-neutralized Fabric API 0.92.2+1.20.1 modules (upstream purged 1.20.x modules)
-    maven { url = uri("/tmp/opencode/localrepo") }
     maven { url = "https://maven.fabricmc.net/" } // Fabric
 }
 
@@ -32,21 +30,9 @@ dependencies {
         transitive = false // avoid its pom pulling a 26.3-era fabric-api BOM chain
     }
 
-    // Fabric API
-    Set<String> apiModules = [
-            "fabric-api-base",
-            "fabric-api-lookup-api-v1",
-            "fabric-transitive-access-wideners-v1",
-            "fabric-command-api-v2",
-            "fabric-entity-events-v1",
-            "fabric-lifecycle-events-v1",
-            "fabric-networking-api-v1",
-            "fabric-message-api-v1"
-    ]
-
-    apiModules.forEach {
-        modImplementation("net.fabricmc.fabric-api:$it:0.92.2+1.20.1-awfix")
-    }
+    // Fabric API - aggregate jar, since upstream purged the individual 1.20.1 module artifacts
+    // (see https://github.com/FabricMC/fabric-example-mod/tree/1.20.1)
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.92.12+1.20.1"
 
     testImplementation(testFixtures(project(":common")))
     testImplementation(project(":extensions:adventure"))
