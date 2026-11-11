@@ -27,8 +27,10 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AlertPopupContextProvider } from './hooks/context/alertPopupContext';
 import { PreferencesContextProvider } from './hooks/preferences/preferencesHook';
 import { ThemeStorageContextProvider } from './hooks/context/themeContextHook.js';
+import { DatapointTimeframeContextProvider } from './hooks/context/datapointTimeframeContext';
 import { ThemeStyleCss } from './components/theme/ThemeStyleCss.js';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { queryRetry } from './dataHooks/queryRetry';
 
 const PlayerPage = React.lazy(() => import('./views/layout/PlayerPage'));
 const PlayerOverview = React.lazy(
@@ -157,7 +159,14 @@ const GroupsRedirect = () => {
     return <Navigate to={'groups'} replace={true} />;
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            refetchOnWindowFocus: false,
+            retry: queryRetry,
+        },
+    },
+});
 const ContextProviders = ({ children }: React.PropsWithChildren) => (
     <QueryClientProvider client={queryClient}>
         <AuthenticationContextProvider>
@@ -168,7 +177,9 @@ const ContextProviders = ({ children }: React.PropsWithChildren) => (
                             <ThemeStorageContextProvider>
                                 <NavigationContextProvider>
                                     <PageExtensionContextProvider>
-                                        {children}
+                                        <DatapointTimeframeContextProvider>
+                                            {children}
+                                        </DatapointTimeframeContextProvider>
                                     </PageExtensionContextProvider>
                                 </NavigationContextProvider>
                             </ThemeStorageContextProvider>
