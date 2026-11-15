@@ -116,10 +116,6 @@ public class DBSystem implements SubSystem {
         }
     }
 
-    /**
-     * Checks if the failure was caused by not being able to connect to the database server.
-     * PostgreSQL reports connection problems with SQLState class 08 (connection exception).
-     */
     private static boolean isConnectionFailure(Throwable t) {
         while (t != null) {
             if (t instanceof SQLException) {

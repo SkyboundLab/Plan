@@ -79,14 +79,12 @@ public class QuerySvc implements QueryService {
     @Override
     public <T> T query(String sql, ThrowingFunction<PreparedStatement, T> performQuery) {
         Database database = dbSystem.getDatabase();
-        // Raw SQL from extensions may be written for another dialect - translate it
         return database.query(new QueryAPIQuery<>(database.getSql().translateRawSQL(sql), performQuery));
     }
 
     @Override
     public CompletableFuture<Void> execute(String sql, ThrowingConsumer<PreparedStatement> performStatement) {
         Database database = dbSystem.getDatabase();
-        // Raw SQL from extensions may be written for another dialect - translate it
         String translatedSql = database.getSql().translateRawSQL(sql);
         return database.executeTransaction(
                 new Transaction() {

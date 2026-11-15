@@ -101,7 +101,6 @@ public class PingQueries {
         String sql = SELECT + '*' + FROM + PingTable.TABLE_NAME + " p" +
                 INNER_JOIN + ServerTable.TABLE_NAME + " s on s." + ServerTable.ID + "=p." + PingTable.SERVER_ID +
                 WHERE + PingTable.USER_ID + "=" + UsersTable.SELECT_USER_ID +
-                // Deterministic insertion order on all database types (no ORDER BY is undefined order)
                 ORDER_BY + "p." + PingTable.ID + " ASC";
 
         return new QueryStatement<>(sql, 10000) {

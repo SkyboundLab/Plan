@@ -269,7 +269,6 @@ public class TPSQueries {
                 INNER_JOIN + ServerTable.TABLE_NAME + " s ON s." + ServerTable.ID + "=t." + SERVER_ID +
                 WHERE + "s." + ServerTable.SERVER_UUID + "=?" +
                 GROUP_BY + floor(DATE + "/?") +
-                // PostgreSQL does not guarantee row order of a GROUP BY result
                 ORDER_BY + DATE;
 
         return new QueryStatement<>(sql) {

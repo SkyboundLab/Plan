@@ -49,7 +49,6 @@ public class ProxyDBSystem extends DBSystem {
 
     @Override
     public void enable() {
-        // Proxy config has no Database.Type by default - MySQL is used unless another registered type is configured
         String dbType = config.getOrDefault(DatabaseSettings.TYPE, "MySQL").toLowerCase().trim();
         if (DBType.exists(dbType)) {
             db = getActiveDatabaseByName(dbType);

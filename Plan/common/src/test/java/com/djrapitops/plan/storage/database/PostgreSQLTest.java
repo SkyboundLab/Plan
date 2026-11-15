@@ -54,17 +54,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * Tests for PostgreSQL database.
- * <p>
- * The setup assumes CI environment with PostgreSQL service running.
- * 'POSTGRES_DB' database should be created before the test.
- *
- * @author Plan fork
- * @see DatabaseTest
- * @see ExtensionsDatabaseTest
- * @see utilities.CIProperties for assumed PostgreSQL setup.
- */
 @ExtendWith(MockitoExtension.class)
 class PostgreSQLTest implements DatabaseTest, DatabaseTestAggregate {
 
@@ -155,12 +144,7 @@ class PostgreSQLTest implements DatabaseTest, DatabaseTestAggregate {
 
     @Test
     void rawSqlFromExtensionsIsTranslatedToPostgreSQL() {
-        // Reproduces the ViaVersion extension issue: raw MySQL DDL (AUTO_INCREMENT) sent through
-        // the Query API is not valid PostgreSQL, so the table was never created and later
-        // SELECT/INSERT/UPDATE failed with 'relation "plan_version_protocol" does not exist'.
         QuerySvc querySvc = new QuerySvc(config(), dbSystem(), serverInfo(), new TestErrorLogger());
-        // Note: Query API consumers are responsible for executing the prepared statement,
-        // like the ViaVersion extension does.
         querySvc.execute("DROP TABLE IF EXISTS plan_version_protocol", PreparedStatement::execute).join();
         querySvc.execute(
                 "CREATE TABLE IF NOT EXISTS plan_version_protocol (" +

@@ -44,14 +44,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-/**
- * PostgreSQL database implementation.
- * <p>
- * Mirrors {@link MySQLDB}: the JDBC driver is downloaded at runtime into an isolated class loader
- * and connections are served from a HikariCP pool.
- *
- * @author Plan fork
- */
 @Singleton
 public class PostgreSQLDB extends SQLDB {
 
@@ -105,9 +97,6 @@ public class PostgreSQLDB extends SQLDB {
         }
     }
 
-    /**
-     * Setups the {@link HikariDataSource}
-     */
     @Override
     public void setupDataSource() {
         if (driverClassLoader == null) {
@@ -118,13 +107,11 @@ public class PostgreSQLDB extends SQLDB {
         Thread currentThread = Thread.currentThread();
         ClassLoader previousClassLoader = currentThread.getContextClassLoader();
 
-        // Set the context class loader to the driver class loader for Hikari to use for finding the Driver
         currentThread.setContextClassLoader(driverClassLoader);
 
         try {
             loadDataSource();
         } finally {
-            // Reset the context classloader back to what it was originally set to, now that the DataSource is created
             currentThread.setContextClassLoader(previousClassLoader);
         }
     }
@@ -137,7 +124,6 @@ public class PostgreSQLDB extends SQLDB {
             String port = config.get(DatabaseSettings.POSTGRESQL_PORT);
             String database = config.get(DatabaseSettings.POSTGRESQL_DATABASE);
             String launchOptions = config.get(DatabaseSettings.POSTGRESQL_LAUNCH_OPTIONS);
-            // REGEX: match "?", match "word=word&" *-times, match "word=word"
 
             if (launchOptions.isEmpty() || !launchOptions.matches("\\?((([\\w-])+=.+)&)*(([\\w-])+=.+)")) {
                 launchOptions = DEFAULT_LAUNCH_OPTIONS;
@@ -151,7 +137,6 @@ public class PostgreSQLDB extends SQLDB {
 
             hikariConfig.setUsername(username);
             hikariConfig.setPassword(password);
-            // Keep timestamps in UTC like the MySQL setup does with 'set time_zone = +00:00'
             hikariConfig.addDataSourceProperty("connectionInitSql", "SET TIME ZONE 'UTC'");
 
             hikariConfig.setPoolName("Plan Connection Pool-" + increment);
@@ -181,17 +166,14 @@ public class PostgreSQLDB extends SQLDB {
     }
 
     private void unloadPostgreSQLDriver() {
-        // Avoid issues with other plugins by removing the postgresql driver from driver manager
         Enumeration<Driver> drivers = DriverManager.getDrivers();
         while (drivers.hasMoreElements()) {
             Driver driver = drivers.nextElement();
             Class<?> driverClass = driver.getClass();
-            // Checks that it's from our class loader to avoid unloading another plugin's/the server's driver
             if (DRIVER_CLASS_NAME.equals(driverClass.getName()) && driverClass.getClassLoader() == driverClassLoader) {
                 try {
                     DriverManager.deregisterDriver(driver);
                 } catch (SQLException e) {
-                    // ignore
                 }
             }
         }

@@ -331,10 +331,6 @@ public interface DatabaseBackupTest extends DatabaseTestPreparer {
         return () -> assertEquals(normalizeForComparison(one.query(query)), normalizeForComparison(two.query(query)));
     }
 
-    /**
-     * Sorts collections so that the comparison does not depend on row order,
-     * which is not guaranteed without an ORDER BY clause (e.g. on PostgreSQL).
-     */
     private static Object normalizeForComparison(Object result) {
         if (result instanceof Collection<?> collection) {
             return collection.stream()
