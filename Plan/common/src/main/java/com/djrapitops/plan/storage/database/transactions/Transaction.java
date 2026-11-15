@@ -139,19 +139,16 @@ public abstract class Transaction {
     private boolean isDeadlocked(SQLException statementFail) {
         if (statementFail instanceof SQLTransactionRollbackException) return true;
         if (dbType == DBType.MYSQL) return statementFail.getErrorCode() == 1213;
-        // PostgreSQL reports deadlocks via SQLState instead of error codes
         return dbType == DBType.POSTGRESQL && "40P01".equals(statementFail.getSQLState());
     }
 
     private boolean isLockWaitTimeout(SQLException statementFail) {
         if (statementFail.getErrorCode() == 1205) return true;
-        // PostgreSQL reports lock wait timeouts via SQLState instead of error codes
         return dbType == DBType.POSTGRESQL && "55P03".equals(statementFail.getSQLState());
     }
 
     private boolean isDuplicateEntry(SQLException statementFail) {
         if (statementFail.getErrorCode() == 1062) return true;
-        // PostgreSQL reports duplicates via SQLState instead of error codes
         return dbType == DBType.POSTGRESQL && "23505".equals(statementFail.getSQLState());
     }
 

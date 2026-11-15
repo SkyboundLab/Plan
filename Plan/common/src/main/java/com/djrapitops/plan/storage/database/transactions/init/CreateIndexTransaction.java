@@ -97,7 +97,6 @@ public class CreateIndexTransaction extends Transaction {
             boolean indexExists = query(MySQLSchemaQueries.doesIndexExist(indexName, tableName));
             if (indexExists) return;
         }
-        // PostgreSQL has no CREATE INDEX IF NOT EXISTS, so check pg_indexes instead
         if (dbType == DBType.POSTGRESQL) {
             boolean indexExists = query(PostgreSQLSchemaQueries.doesIndexExist(indexName, tableName));
             if (indexExists) return;

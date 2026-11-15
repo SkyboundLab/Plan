@@ -547,7 +547,6 @@ public class DatabaseCopyProcessor implements CriticalRunnable {
         String indexName = getIndexName(tableName, columns);
         String uniqueConstraintMySQL = "ALTER TABLE " + tableName + " ADD UNIQUE INDEX " + indexName + " (" + columns + ")";
         String uniqueConstraintSQLite = "CREATE UNIQUE INDEX IF NOT EXISTS " + indexName + " ON " + tableName + " (" + columns + ")";
-        // PostgreSQL has no IF NOT EXISTS for indexes and no ALTER TABLE ADD UNIQUE INDEX
         String uniqueConstraintPostgreSQL = "CREATE UNIQUE INDEX " + indexName + " ON " + tableName + " (" + columns + ")";
 
         DBType toType = toDB.getType();

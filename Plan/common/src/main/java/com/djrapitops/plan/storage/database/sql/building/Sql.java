@@ -329,7 +329,6 @@ public abstract class Sql {
 
         @Override
         public String dateToDayOfWeek(String sql) {
-            // DOW: 0 = Sunday .. 6 = Saturday, +1 to match MySQL DAYOFWEEK (1 = Sunday .. 7 = Saturday)
             return "CAST(EXTRACT(DOW FROM " + sql + ") AS INTEGER) + 1";
         }
 
@@ -376,13 +375,11 @@ public abstract class Sql {
 
         @Override
         public String orderByText(String column) {
-            // Byte-wise ordering to match MySQL/SQLite regardless of the database's locale collation
             return ORDER_BY + column + " COLLATE \"C\"";
         }
 
         @Override
         public String columnType(String type) {
-            // PostgreSQL does not have a type called "double"
             if (DOUBLE.equals(type)) {
                 return "double precision";
             }

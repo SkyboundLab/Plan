@@ -91,12 +91,10 @@ public abstract class Patch extends OperationCriticalTransaction {
     }
 
     protected void dropColumn(String tableName, String columnName) {
-        // PostgreSQL requires CASCADE when other objects (e.g. foreign keys) depend on the column
         execute(ALTER_TABLE + tableName + " DROP COLUMN " + columnName + (dbType == DBType.POSTGRESQL ? " CASCADE" : ""));
     }
 
     protected void dropTable(String name) {
-        // PostgreSQL requires CASCADE when other tables have foreign keys referencing this table
         execute("DROP TABLE IF EXISTS " + name + (dbType == DBType.POSTGRESQL ? " CASCADE" : ""));
     }
 
