@@ -138,7 +138,6 @@ public class DBPreparer {
         config.set(DatabaseSettings.POSTGRESQL_PASS, pass != null ? pass : "");
         config.set(DatabaseSettings.POSTGRESQL_HOST, host != null ? host : "127.0.0.1");
         config.set(DatabaseSettings.POSTGRESQL_PORT, port != null ? port : "5432");
-        // Tests run against servers that may not have SSL configured
         config.set(DatabaseSettings.POSTGRESQL_LAUNCH_OPTIONS, "?sslmode=disable");
         config.set(DatabaseSettings.TYPE, dbName);
         return Optional.of(database);
@@ -153,7 +152,6 @@ public class DBPreparer {
             postgreSQL.executeTransaction(new Transaction() {
                 @Override
                 protected void performOperations() {
-                    // Reset the database to a clean state
                     execute("DROP SCHEMA public CASCADE");
                     execute("CREATE SCHEMA public");
                     execute("GRANT ALL ON SCHEMA public TO " + user);

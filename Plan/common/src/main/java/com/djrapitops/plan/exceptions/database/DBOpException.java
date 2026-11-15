@@ -172,11 +172,6 @@ public class DBOpException extends IllegalStateException implements ExceptionWit
         return new DBOpException("SQL Failure: " + e.getMessage(), e, context.build());
     }
 
-    /**
-     * Adds context for PostgreSQL SQLStates.
-     *
-     * @return true if the SQLState was recognized and handled.
-     */
     private static boolean addPostgreSQLContext(String sqlState, ErrorContext.Builder context) {
         switch (sqlState) {
             case "23505": // unique_violation

@@ -30,18 +30,9 @@ import java.util.Optional;
 
 import static com.djrapitops.plan.storage.database.sql.building.Sql.*;
 
-/**
- * Static method class for PostgreSQL Schema related queries.
- * <p>
- * PostgreSQL specific schema queries live here so that adding a new database type
- * does not require changes to the shared query/transaction classes.
- *
- * @author Plan fork
- */
 public class PostgreSQLSchemaQueries {
 
     private PostgreSQLSchemaQueries() {
-        /* Static method class */
     }
 
     public static Query<Optional<String>> getVersion() {
@@ -118,12 +109,6 @@ public class PostgreSQLSchemaQueries {
         };
     }
 
-    /**
-     * Lists single-column foreign key constraints that reference the given table.
-     * <p>
-     * Returns the same {@link MySQLSchemaQueries.ForeignKeyConstraint} type as the MySQL variant
-     * so that shared patch code can consume both.
-     */
     public static Query<List<MySQLSchemaQueries.ForeignKeyConstraint>> foreignKeyConstraintsOf(String referencedTable) {
         String keySQL = SELECT + "con.conname AS constraint_name, cl.relname AS table_name, att2.attname AS column_name," +
                 "cl2.relname AS referenced_table_name, att.attname AS referenced_column_name" +

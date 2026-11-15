@@ -50,7 +50,6 @@ tasks.register("generateResourceForPostgreSQLDriver", GenerateDependencyDownload
     var conf = configurations.postgresqlDriver
     configuration = conf
     file = "assets/plan/dependencies/" + conf.name + ".txt"
-    // Not necessary to include in the resource
     includeShadowJarRelocations = false
 }
 
@@ -123,7 +122,7 @@ dependencies {
     testFixturesApi "org.xerial:sqlite-jdbc:$sqliteVersion" // SQLite
     testFixturesApi "com.mysql:mysql-connector-j:$mysqlVersion" // MySQL
     testFixturesApi "org.mariadb.jdbc:mariadb-java-client:$mariadbVersion" // MariaDB
-    testFixturesApi "org.postgresql:postgresql:$postgresqlVersion" // PostgreSQL
+    testFixturesApi "org.postgresql:postgresql:$postgresqlVersion"
 
     testImplementation "com.google.dagger:dagger:$daggerVersion"
     testAnnotationProcessor "com.google.dagger:dagger-compiler:$daggerVersion"

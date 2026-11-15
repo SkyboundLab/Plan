@@ -130,7 +130,6 @@ public abstract class Patch extends OperationCriticalTransaction {
                 execute(ALTER_TABLE + constraint.getTable() +
                         " DROP CONSTRAINT " + constraint.getConstraintName());
             } else {
-                // Uses information from https://stackoverflow.com/a/34574758
                 execute(ALTER_TABLE + constraint.getTable() +
                         " DROP FOREIGN KEY " + constraint.getConstraintName());
             }
