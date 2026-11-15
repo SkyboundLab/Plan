@@ -62,7 +62,6 @@ public class DBOpException extends IllegalStateException implements ExceptionWit
         int errorCode = e.getErrorCode();
         context.related("Error code: " + errorCode)
                 .related(sql);
-        // PostgreSQL reports errors via SQLState (errorCode is 0)
         String sqlState = e.getSQLState();
         if (sqlState != null && addPostgreSQLContext(sqlState, context)) {
             return new DBOpException("SQL Failure: " + e.getMessage(), e, context.build());

@@ -96,7 +96,6 @@ public class CreateTableBuilder {
     }
 
     public CreateTableBuilder defaultValue(boolean value) {
-        // PostgreSQL does not accept integer literals as boolean defaults
         if (dbType == DBType.POSTGRESQL) {
             return defaultValue(value ? "TRUE" : "FALSE");
         }

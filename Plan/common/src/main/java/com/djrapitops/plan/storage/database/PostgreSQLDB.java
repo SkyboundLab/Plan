@@ -174,6 +174,7 @@ public class PostgreSQLDB extends SQLDB {
                 try {
                     DriverManager.deregisterDriver(driver);
                 } catch (SQLException e) {
+                    // ignore
                 }
             }
         }
